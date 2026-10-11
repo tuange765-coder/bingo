@@ -1,10 +1,14 @@
+# =========================================================
+#  BINGO VIRTUAL ONLINE — Con hora del sorteo y modo prueba
+# =========================================================
 import csv
 import io
 import json
 import os
 import random
+import string
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import quote
 
 import streamlit as st
@@ -19,13 +23,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-CLAVE_ADMIN       = "admin123"           # 👈 CAMBIA ESTA CONTRASEÑA
+CLAVE_ADMIN       = "Juan*316*"          # 👈 TU CONTRASEÑA
 WHATSAPP_ADMIN    = "584120000000"       # 👈 Tu WhatsApp (código país + número)
 PRECIO_FIGURAS    = 200
 PRECIO_LLENO      = 500
 INTERVALO_DEFECTO = 5
 ARCHIVO_DATOS     = "datos.json"
-CARPETA_COMPROB  = "comprobantes"
+CARPETA_COMPROB   = "comprobantes"
 
 os.makedirs(CARPETA_COMPROB, exist_ok=True)
 
@@ -87,6 +91,8 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
     font-weight:700; font-size:13px; border:1px solid #1e2b46; }
 .bola.on { background: linear-gradient(135deg,#22c55e,#15803d);
     color:#04140a; border-color:#22c55e; box-shadow: 0 0 14px rgba(34,197,94,.55); }
+.bola.test { background: linear-gradient(135deg,#f59e0b,#b45309);
+    color:#fff; border-color:#f59e0b; box-shadow: 0 0 14px rgba(245,158,11,.55); }
 .carton { display:inline-block; background:#0f172a; padding:12px;
     border-radius:16px; border:1px solid #243352; box-shadow: 0 14px 30px rgba(0,0,0,.4); }
 .fila { display:flex; gap:6px; margin-bottom:6px; }
@@ -106,12 +112,62 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 .pill-wait { background:#78350f; color:#fcd34d; border:1px solid #f59e0b; }
 .pill-no   { background:#7f1d1d; color:#fca5a5; border:1px solid #ef4444; }
 .pill-info { background:#1e3a8a; color:#bfdbfe; border:1px solid #3b82f6; }
+
+.codigo-box {
+    background: linear-gradient(135deg, #16a34a, #065f46);
+    border: 2px dashed #86efac;
+    border-radius: 16px;
+    padding: 18px 22px;
+    text-align: center;
+    margin: 12px 0;
+    box-shadow: 0 0 30px rgba(34,197,94,.35);
+}
+.codigo-titulo { color:#d1fae5; font-size:13px; letter-spacing:2px; font-weight:700; }
+.codigo-valor  { color:#fff; font-size:34px; font-weight:800; letter-spacing:4px;
+                 margin-top:6px; font-family: 'Courier New', monospace; }
+
+.pendiente-box {
+    background: linear-gradient(135deg, #78350f, #451a03);
+    border: 2px dashed #fcd34d;
+    border-radius: 16px;
+    padding: 18px 22px;
+    text-align: center;
+    margin: 12px 0;
+}
+.pendiente-titulo { color:#fef3c7; font-size:15px; font-weight:700; }
+.pendiente-texto  { color:#fde68a; font-size:13px; margin-top:6px; }
+
+.hora-box {
+    background: linear-gradient(135deg, #1e40af, #1e3a8a);
+    border: 2px solid #60a5fa;
+    border-radius: 16px;
+    padding: 16px 22px;
+    text-align: center;
+    margin: 12px 0;
+    box-shadow: 0 0 25px rgba(59,130,246,.35);
+}
+.hora-titulo { color:#dbeafe; font-size:13px; letter-spacing:2px; font-weight:700; }
+.hora-valor  { color:#fff; font-size:28px; font-weight:800; margin-top:6px; }
+.hora-resto  { color:#93c5fd; font-size:14px; margin-top:6px; }
+
+.prueba-banner {
+    background: linear-gradient(135deg, #b45309, #78350f);
+    border: 2px dashed #fbbf24;
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    text-align: center;
+    color: #fef3c7;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
 hr { border-color:#1f2c47; }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================================================
-#  PERSISTENCIA (guardar / cargar JSON)
+#  PERSISTENCIA
 # =========================================================
 def guardar_datos():
     datos = {
@@ -140,7 +196,7 @@ def cargar_datos():
 
 
 # =========================================================
-#  ESTADO DE LA SESIÓN
+#  ESTADO
 # =========================================================
 ss = st.session_state
 _datos = cargar_datos()
@@ -156,9 +212,12 @@ ss.setdefault("auto_sorteo", False)
 ss.setdefault("intervalo_auto", INTERVALO_DEFECTO)
 ss.setdefault("ultimo_canto", 0.0)
 ss.setdefault("ultima_balota_vista", None)
+# Modo prueba
+ss.setdefault("modo_prueba", False)
+ss.setdefault("numeros_prueba", [])
 
 # =========================================================
-#  FUNCIONES AUXILIARES
+#  FUNCIONES
 # =========================================================
 def crear_partida(nombre, pozo_base=0):
     ss.contador_partida += 1
@@ -169,6 +228,7 @@ def crear_partida(nombre, pozo_base=0):
         "estado": "Abierta",
         "numeros_cantados": [],
         "pozo_base": int(pozo_base),
+        "hora_sorteo": None,
     }
     if ss.partida_actual is None:
         ss.partida_actual = pid
@@ -195,6 +255,15 @@ def generar_carton():
     return matriz
 
 
+def generar_codigo_unico():
+    existentes = {c.get("codigo") for c in ss.cartones if c.get("codigo")}
+    while True:
+        chars = string.ascii_uppercase + string.digits
+        codigo = "BNG-" + "".join(random.choices(chars, k=4))
+        if codigo not in existentes:
+            return codigo
+
+
 def carton_html(matriz, cantados):
     letras = ["B", "I", "N", "G", "O"]
     html = '<div class="carton"><div class="fila">' + "".join(
@@ -213,10 +282,13 @@ def carton_html(matriz, cantados):
     return html
 
 
-def tablero_html(cantados):
+def tablero_html(cantados, clase_extra=""):
     html = '<div class="tablero">'
     for n in range(1, 76):
-        cls = "bola on" if n in cantados else "bola"
+        if n in cantados:
+            cls = f"bola on {clase_extra}".strip()
+        else:
+            cls = "bola"
         html += f'<div class="{cls}">{n}</div>'
     html += '</div>'
     return html
@@ -256,31 +328,29 @@ def link_whatsapp(numero, mensaje):
     return f"https://wa.me/{numero}?text={quote(mensaje)}"
 
 
-def registrar_ganador(partida, carton, tipo_premio, monto):
+def registrar_ganador(partida, carton, tipo_premio):
     ss.ganadores.append({
-        "fecha":      datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "partida":    partida["nombre"],
-        "carton":     carton["id"],
-        "jugador":    carton["nombre"],
-        "telefono":   carton["telefono"],
-        "premio":     tipo_premio,
-        "monto":      monto,
+        "fecha":    datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "partida":  partida["nombre"],
+        "carton":   carton.get("codigo", carton["id"]),
+        "jugador":  carton["nombre"],
+        "telefono": carton["telefono"],
+        "premio":   tipo_premio,
     })
     guardar_datos()
 
 
 def exportar_csv(ganadores):
     buf = io.StringIO()
-    campos = ["fecha", "partida", "carton", "jugador", "telefono", "premio", "monto"]
+    campos = ["fecha", "partida", "carton", "jugador", "telefono", "premio"]
     w = csv.DictWriter(buf, fieldnames=campos)
     w.writeheader()
     for g in ganadores:
-        w.writerow(g)
+        w.writerow({k: g.get(k, "") for k in campos})
     return buf.getvalue().encode("utf-8")
 
 
 def reproducir_sonido():
-    """Reproduce balota.mp3 si existe en la carpeta."""
     if os.path.exists("balota.mp3"):
         try:
             st.audio("balota.mp3", format="audio/mp3", autoplay=True)
@@ -288,7 +358,36 @@ def reproducir_sonido():
             pass
 
 
-# Crear una partida por defecto si está vacío
+def tiempo_restante(hora_str):
+    """Devuelve un timedelta hasta la hora objetivo, o None si ya pasó."""
+    if not hora_str:
+        return None
+    try:
+        objetivo = datetime.strptime(hora_str, "%Y-%m-%d %H:%M")
+        delta = objetivo - datetime.now()
+        return delta
+    except Exception:
+        return None
+
+
+def formatear_delta(delta):
+    """Devuelve un texto amigable con el tiempo restante."""
+    if delta is None:
+        return ""
+    if delta.total_seconds() <= 0:
+        return "¡El sorteo está en curso!"
+    dias = delta.days
+    horas, rem = divmod(delta.seconds, 3600)
+    minutos, segundos = divmod(rem, 60)
+    if dias > 0:
+        return f"{dias}d {horas}h {minutos}m"
+    if horas > 0:
+        return f"{horas}h {minutos}m {segundos}s"
+    if minutos > 0:
+        return f"{minutos}m {segundos}s"
+    return f"{segundos}s"
+
+
 if not ss.partidas:
     crear_partida("Partida de Bienvenida", pozo_base=0)
 
@@ -318,10 +417,20 @@ with st.sidebar:
         ss.partida_actual = pid_sel
         p = partida_actual()
         color = {"Abierta": "pill-ok", "En curso": "pill-wait", "Cerrada": "pill-no"}[p["estado"]]
-        st.markdown(f'<span class="pill {color}">{p["estado"]}</span>', unsafe_allow_html=True)
+        st.markdown(f'<span class="pill {color}">{p["estado"]}</span>',
+                    unsafe_allow_html=True)
+
+        # --- Hora del sorteo en sidebar ---
+        if p.get("hora_sorteo"):
+            delta = tiempo_restante(p["hora_sorteo"])
+            st.markdown(
+                f'<div class="hora-box">'
+                f'<div class="hora-titulo">⏰ SORTEO PROGRAMADO</div>'
+                f'<div class="hora-valor">{p["hora_sorteo"]}</div>'
+                f'<div class="hora-resto">⏳ {formatear_delta(delta)}</div>'
+                f'</div>', unsafe_allow_html=True)
     st.markdown("---")
     if ss.partida_actual:
-        st.markdown(f"**💰 Pozo:** `{calcular_pozo(ss.partida_actual)} Bs`")
         st.markdown(f"**🎱 Balotas:** `{len(numeros_cantados())}/75`")
         activos = len([c for c in ss.cartones
                        if c["estado"] == "Activo" and c["partida_id"] == ss.partida_actual])
@@ -342,6 +451,16 @@ if opcion == "🛒 Comprar / Ver Cartón":
         st.error("No hay partida activa. Contacta al administrador.")
         st.stop()
 
+    # --- Banner con la hora programada ---
+    if p.get("hora_sorteo"):
+        delta = tiempo_restante(p["hora_sorteo"])
+        st.markdown(
+            f'<div class="hora-box">'
+            f'<div class="hora-titulo">⏰ SORTEO PROGRAMADO</div>'
+            f'<div class="hora-valor">{p["hora_sorteo"]}</div>'
+            f'<div class="hora-resto">⏳ Faltan: {formatear_delta(delta)}</div>'
+            f'</div>', unsafe_allow_html=True)
+
     if p["estado"] == "Cerrada":
         st.warning("⛔ Esta partida está cerrada. Elige otra en la barra lateral.")
 
@@ -357,19 +476,15 @@ if opcion == "🛒 Comprar / Ver Cartón":
             ],
         )
         if "Figuras" in modalidad:
-            costo, tipo, premio_pct = PRECIO_FIGURAS, "Figuras", 50
+            costo, tipo = PRECIO_FIGURAS, "Figuras"
         else:
-            costo, tipo, premio_pct = PRECIO_LLENO, "Lleno", 80
+            costo, tipo = PRECIO_LLENO, "Lleno"
 
-        pozo = calcular_pozo(p["id"])
-        premio = int((pozo + costo) * premio_pct / 100)
-
-        c1, c2 = st.columns(2)
-        c1.markdown(f'<div class="card"><h4>💵 Costo</h4>'
-                    f'<h2 style="margin:0">{costo} Bs</h2></div>', unsafe_allow_html=True)
-        c2.markdown(f'<div class="card"><h4>🏆 Premio estimado</h4>'
-                    f'<h2 style="margin:0">{premio} Bs</h2>'
-                    f'<small>{premio_pct}% del pozo</small></div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="card"><h4>💵 Costo del cartón</h4>'
+            f'<h2 style="margin:0">{costo} Bs</h2>'
+            f'<small>Modalidad: {tipo}</small></div>',
+            unsafe_allow_html=True)
 
         st.markdown("### 2️⃣ Realiza el Pago Móvil")
         filas = "".join(
@@ -378,6 +493,9 @@ if opcion == "🛒 Comprar / Ver Cartón":
             for k, v in DATOS_PAGO)
         st.markdown(f'<div class="card"><table style="border-collapse:collapse">{filas}</table></div>',
                     unsafe_allow_html=True)
+
+        st.info("📌 **Importante:** tu código de cartón se te entregará "
+                "**una vez el administrador confirme tu pago**.")
 
     with col_der:
         st.markdown("### 3️⃣ Registra tu pago")
@@ -388,12 +506,13 @@ if opcion == "🛒 Comprar / Ver Cartón":
             comprobante = st.file_uploader(
                 "📷 Captura del comprobante (jpg/png):",
                 type=["jpg", "jpeg", "png"])
-            enviar = st.form_submit_button("✅ Registrar Pago Móvil")
+            enviar = st.form_submit_button("✅ Enviar comprobante")
 
         if enviar:
             if nombre and telefono and referencia and p["estado"] != "Cerrada":
                 carton = {
                     "id": nuevo_id_carton(),
+                    "codigo": None,
                     "nombre": nombre.strip(),
                     "telefono": telefono.strip(),
                     "referencia": referencia.strip(),
@@ -405,7 +524,6 @@ if opcion == "🛒 Comprar / Ver Cartón":
                     "comprobante": None,
                     "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 }
-                # Guardar imagen si existe
                 if comprobante is not None:
                     ruta = os.path.join(CARPETA_COMPROB, f"{carton['id']}.png")
                     with open(ruta, "wb") as f:
@@ -415,53 +533,76 @@ if opcion == "🛒 Comprar / Ver Cartón":
                 ss.cartones.append(carton)
                 guardar_datos()
 
-                st.success(f"🎉 ¡Registro exitoso! Tu cartón **{carton['id']}** "
-                           f"para la partida **{p['nombre']}** fue generado. "
-                           "El administrador validará tu pago.")
+                st.markdown(
+                    '<div class="pendiente-box">'
+                    '<div class="pendiente-titulo">⏳ Pago en revisión</div>'
+                    '<div class="pendiente-texto">'
+                    'Tu comprobante fue recibido. Cuando el administrador '
+                    'confirme tu pago, recibirás tu <b>código de cartón</b>.</div>'
+                    '</div>', unsafe_allow_html=True)
 
-                msg = (f"Hola, soy {carton['nombre']}. Registré mi cartón "
-                       f"{carton['id']} en la partida {p['nombre']}. "
-                       f"Modalidad: {carton['tipo']} ({carton['costo']} Bs). "
-                       f"Referencia: {carton['referencia']}.")
+                msg = (f"Hola, soy {carton['nombre']}. Envié mi comprobante "
+                       f"para la partida {p['nombre']}. Modalidad: {carton['tipo']} "
+                       f"({carton['costo']} Bs). Referencia: {carton['referencia']}.")
                 st.markdown(
                     f'<a href="{link_whatsapp(WHATSAPP_ADMIN, msg)}" target="_blank" '
                     f'style="display:inline-block;padding:10px 18px;margin-top:8px;'
                     f'background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;'
                     f'font-weight:700;border-radius:12px;text-decoration:none">'
-                    f'📲 Enviar comprobante por WhatsApp</a>',
+                    f'📲 Avisar al administrador por WhatsApp</a>',
                     unsafe_allow_html=True)
-
-                st.markdown(f'<div style="text-align:center;margin-top:14px">'
-                            f'{carton_html(carton["matriz"], numeros_cantados())}</div>',
-                            unsafe_allow_html=True)
             elif p["estado"] == "Cerrada":
                 st.error("⛔ La partida está cerrada, no se aceptan registros.")
             else:
                 st.error("⚠️ Completa todos los campos del formulario.")
 
+    # --- CONSULTA ---
     st.markdown("---")
-    st.markdown("### 🔍 Consultar mis cartones")
-    busqueda = st.text_input("Ingresa tu número de teléfono o referencia:")
+    st.markdown("### 🔍 Consultar el código de mi cartón")
+    st.caption("Ingresa tu teléfono o la referencia del pago para ver el estado "
+               "y, si ya fue confirmado, tu código de cartón.")
+
+    busqueda = st.text_input("Teléfono o referencia del pago:")
+
     if busqueda:
         encontrados = [c for c in ss.cartones
                        if busqueda.strip() in c["telefono"]
                        or busqueda.strip() == c["referencia"]]
         if not encontrados:
             st.warning("No se encontraron cartones con ese dato.")
+
         for c in encontrados:
-            color = {"Activo": "pill-ok", "Pendiente": "pill-wait",
-                     "Rechazado": "pill-no"}.get(c["estado"], "pill-info")
             nombre_partida = ss.partidas.get(c["partida_id"], {}).get("nombre", "—")
-            st.markdown(
-                f'<div class="card">'
-                f'<h4 style="margin:0">🎫 {c["id"]} · {c["nombre"]}</h4>'
-                f'<span class="pill {color}">{c["estado"]}</span> '
-                f'<span class="pill pill-info">{nombre_partida}</span> '
-                f'<span style="color:#94a3b8;font-size:13px">'
-                f'Modalidad: {c["tipo"]} · {c["costo"]} Bs</span>'
-                f'<div style="margin-top:14px">'
-                f'{carton_html(c["matriz"], numeros_cantados())}</div>'
-                f'</div>', unsafe_allow_html=True)
+            estado = c["estado"]
+
+            if estado == "Activo":
+                st.markdown(
+                    f'<div class="codigo-box">'
+                    f'<div class="codigo-titulo">🎟️ CÓDIGO DE TU CARTÓN</div>'
+                    f'<div class="codigo-valor">{c.get("codigo","—")}</div>'
+                    f'</div>', unsafe_allow_html=True)
+                st.success(f"✅ Pago confirmado · Partida: **{nombre_partida}** · "
+                           f"Modalidad: **{c['tipo']}**")
+                st.markdown(
+                    f'<div style="text-align:center">'
+                    f'{carton_html(c["matriz"], numeros_cantados())}</div>',
+                    unsafe_allow_html=True)
+
+            elif estado == "Pendiente":
+                st.markdown(
+                    '<div class="pendiente-box">'
+                    '<div class="pendiente-titulo">⏳ Pago en revisión</div>'
+                    '<div class="pendiente-texto">'
+                    'Aún no se ha confirmado tu pago. Cuando el administrador lo '
+                    'valide, aparecerá aquí tu código de cartón.</div>'
+                    '</div>', unsafe_allow_html=True)
+                st.caption(f"📞 {c['telefono']} · Ref: {c['referencia']} · "
+                           f"Partida: {nombre_partida}")
+
+            else:
+                st.error(f"⛔ Pago rechazado · Partida: {nombre_partida} · "
+                         f"Ref: {c['referencia']}")
+                st.caption("Contacta al administrador por WhatsApp para más información.")
 
 
 # =========================================================
@@ -477,6 +618,19 @@ elif opcion == "📺 Sorteo en Vivo":
     st.markdown(f"### 🎮 Partida: **{p['nombre']}** "
                 f'<span class="pill pill-info">{p["estado"]}</span>',
                 unsafe_allow_html=True)
+
+    # --- Hora programada ---
+    if p.get("hora_sorteo"):
+        delta = tiempo_restante(p["hora_sorteo"])
+        st.markdown(
+            f'<div class="hora-box">'
+            f'<div class="hora-titulo">⏰ SORTEO PROGRAMADO</div>'
+            f'<div class="hora-valor">{p["hora_sorteo"]}</div>'
+            f'<div class="hora-resto">⏳ Faltan: {formatear_delta(delta)}</div>'
+            f'</div>', unsafe_allow_html=True)
+    else:
+        st.caption("ℹ️ El administrador aún no ha programado la hora del sorteo.")
+
     st.markdown("---")
 
     col_a, col_b = st.columns([1, 1.6], gap="large")
@@ -519,7 +673,6 @@ else:
     st.title("⚙️ Panel de Administrador")
     st.markdown("---")
 
-    # -------- LOGIN --------
     if not ss.admin_ok:
         with st.form("login_admin"):
             clave = st.text_input("Contraseña de administrador:", type="password")
@@ -582,7 +735,7 @@ else:
                         guardar_datos()
                         st.rerun()
 
-    # -------- CONTROL DEL SORTEO --------
+    # -------- PROGRAMAR HORA DEL SORTEO --------
     p = partida_actual()
     if not p:
         st.warning("Crea una partida primero.")
@@ -592,7 +745,90 @@ else:
                 f'<span class="pill pill-info">{p["estado"]}</span>',
                 unsafe_allow_html=True)
 
-    # --- Botones de control ---
+    with st.expander("⏰ Programar hora del sorteo", expanded=not p.get("hora_sorteo")):
+        st.markdown("Elige la fecha y hora en la que iniciará el sorteo en vivo. "
+                    "Los jugadores verán una cuenta regresiva automáticamente.")
+        col_h1, col_h2, col_h3 = st.columns([1.2, 1, 1])
+        with col_h1:
+            fecha_sel = st.date_input("📅 Fecha del sorteo:",
+                                      value=datetime.now().date())
+        with col_h2:
+            hora_sel = st.time_input("🕐 Hora:",
+                                     value=(datetime.now() + timedelta(hours=1)).time())
+        with col_h3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("💾 Guardar hora"):
+                p["hora_sorteo"] = f"{fecha_sel} {hora_sel.strftime('%H:%M')}"
+                guardar_datos()
+                st.success(f"✅ Sorteo programado para **{p['hora_sorteo']}**")
+                st.rerun()
+
+        if p.get("hora_sorteo"):
+            delta = tiempo_restante(p["hora_sorteo"])
+            st.info(f"⏰ Hora actual programada: **{p['hora_sorteo']}** · "
+                    f"⏳ Faltan: **{formatear_delta(delta)}**")
+            if st.button("🗑️ Borrar hora programada"):
+                p["hora_sorteo"] = None
+                guardar_datos()
+                st.rerun()
+
+    st.markdown("---")
+
+    # =========================
+    #  MODO PRUEBA
+    # =========================
+    with st.expander("🧪 Modo Prueba (sorteo de prueba sin afectar la partida real)",
+                     expanded=ss.modo_prueba):
+        st.caption("Aquí puedes hacer sorteos de prueba como administrador. "
+                   "Las balotas que cantes aquí **NO** afectan la partida real ni "
+                   "los cartones de los jugadores.")
+
+        col_t1, col_t2, col_t3 = st.columns(3)
+        with col_t1:
+            if st.button("🎲 Cantar balota de PRUEBA"):
+                disp = [n for n in range(1, 76) if n not in ss.numeros_prueba]
+                if disp:
+                    ss.numeros_prueba.append(random.choice(disp))
+                    st.rerun()
+                else:
+                    st.warning("Ya se cantaron las 75 balotas en modo prueba.")
+        with col_t2:
+            if st.button("🔄 Reiniciar prueba"):
+                ss.numeros_prueba = []
+                st.rerun()
+        with col_t3:
+            nuevo_modo = st.toggle("🎯 Modo prueba ACTIVO",
+                                   value=ss.modo_prueba,
+                                   key="toggle_modo_prueba")
+            ss.modo_prueba = nuevo_modo
+
+        if ss.numeros_prueba:
+            st.markdown(f"**Última balota de prueba:** "
+                        f"`{ss.numeros_prueba[-1]}` · "
+                        f"Total: `{len(ss.numeros_prueba)}/75`")
+            st.markdown(tablero_html(ss.numeros_prueba, clase_extra="test"),
+                        unsafe_allow_html=True)
+            st.markdown("**Historial de prueba:** " +
+                        " ".join(
+                            f'<span style="display:inline-block;margin:3px;'
+                            f'padding:6px 12px;border-radius:10px;'
+                            f'background:#78350f;color:#fcd34d;font-weight:700;'
+                            f'border:1px solid #f59e0b">{n}</span>'
+                            for n in ss.numeros_prueba),
+                        unsafe_allow_html=True)
+        else:
+            st.info("Aún no has cantado balotas de prueba. Pulsa **🎲 Cantar balota de PRUEBA**.")
+
+    # Banner si el modo prueba está activo
+    if ss.modo_prueba:
+        st.markdown(
+            '<div class="prueba-banner">'
+            '🧪 MODO PRUEBA ACTIVO — Los sorteos reales están siendo monitoreados'
+            '</div>', unsafe_allow_html=True)
+
+    # -------- CONTROL DEL SORTEO REAL --------
+    st.markdown("### 🎰 Control del sorteo real")
+
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         if st.button("▶️ Cantar balota"):
@@ -621,7 +857,6 @@ else:
             ss.auto_sorteo = False
             st.rerun()
 
-    # --- Configuración del auto sorteo ---
     with st.expander("⚙️ Configuración del sorteo automático", expanded=ss.auto_sorteo):
         ss.intervalo_auto = st.slider(
             "Segundos entre balotas:", min_value=1, max_value=30,
@@ -631,7 +866,6 @@ else:
             restante = max(0, ss.intervalo_auto - (time.time() - ss.ultimo_canto))
             st.info(f"🟢 Auto sorteo ACTIVO · Próxima balota en ~{restante:.1f}s")
 
-    # --- Auto sorteo ---
     if ss.auto_sorteo:
         ahora = time.time()
         if ahora - ss.ultimo_canto >= ss.intervalo_auto:
@@ -645,14 +879,12 @@ else:
         time.sleep(1.0)
         st.rerun()
 
-    # --- Sonido al detectar nueva balota ---
     if p["numeros_cantados"] and ss.ultima_balota_vista != p["numeros_cantados"][-1]:
         ss.ultima_balota_vista = p["numeros_cantados"][-1]
         reproducir_sonido()
 
     st.markdown("---")
 
-    # --- Vista general ---
     col_x, col_y = st.columns([1, 1.6], gap="large")
     with col_x:
         if p["numeros_cantados"]:
@@ -676,6 +908,11 @@ else:
     if not cartones_p:
         st.info("Aún no hay cartones registrados en esta partida.")
     else:
+        # Contador de pendientes
+        pendientes = len([c for c in cartones_p if c["estado"] == "Pendiente"])
+        if pendientes:
+            st.warning(f"⏳ Tienes **{pendientes}** cartón(es) pendiente(s) por confirmar.")
+
         for c in cartones_p:
             color = {"Activo": "pill-ok", "Pendiente": "pill-wait",
                      "Rechazado": "pill-no"}.get(c["estado"], "pill-info")
@@ -687,7 +924,13 @@ else:
                     f'{c["tipo"]} · {c["costo"]} Bs</span>',
                     unsafe_allow_html=True)
 
-                # --- Ver comprobante ---
+                if c.get("codigo"):
+                    st.markdown(
+                        f'<div class="codigo-box">'
+                        f'<div class="codigo-titulo">CÓDIGO ASIGNADO</div>'
+                        f'<div class="codigo-valor">{c["codigo"]}</div>'
+                        f'</div>', unsafe_allow_html=True)
+
                 if c.get("comprobante") and os.path.exists(c["comprobante"]):
                     st.image(c["comprobante"], caption="Comprobante de pago",
                              width=320)
@@ -697,47 +940,75 @@ else:
                             unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
 
-                # --- WhatsApp al jugador ---
-                msg_jug = (f"Hola {c['nombre']}, sobre tu cartón {c['id']} "
-                           f"de la partida {p['nombre']}: ")
+                b1, b2, b3 = st.columns(3)
+                with b1:
+                    if c["estado"] != "Activo":
+                        if st.button("✅ Confirmar pago y dar código",
+                                     key=f"ok_{c['id']}"):
+                            if not c.get("codigo"):
+                                c["codigo"] = generar_codigo_unico()
+                            c["estado"] = "Activo"
+                            guardar_datos()
+                            st.success(f"✅ Pago confirmado. "
+                                       f"Código entregado: **{c['codigo']}**")
+                            st.rerun()
+                    else:
+                        st.button("✅ Pago confirmado", disabled=True,
+                                  key=f"okd_{c['id']}")
+                with b2:
+                    if st.button("⛔ Rechazar", key=f"no_{c['id']}"):
+                        c["estado"] = "Rechazado"
+                        guardar_datos()
+                        st.rerun()
+                with b3:
+                    if st.button("🗑️ Eliminar", key=f"del_{c['id']}"):
+                        ss.cartones.remove(c)
+                        guardar_datos()
+                        st.rerun()
+
+                if c["estado"] == "Activo" and c.get("codigo"):
+                    msg_ok = (f"✅ ¡Hola {c['nombre']}! Tu pago fue confirmado. "
+                              f"Tu código de cartón es *{c['codigo']}* para la "
+                              f"partida {p['nombre']}. ¡Mucha suerte! 🍀")
+                elif c["estado"] == "Pendiente":
+                    msg_ok = (f"Hola {c['nombre']}, estamos verificando tu pago "
+                              f"para la partida {p['nombre']}. "
+                              f"En breve recibirás tu código de cartón.")
+                else:
+                    msg_ok = (f"Hola {c['nombre']}, tu pago para la partida "
+                              f"{p['nombre']} no pudo ser verificado.")
+
+                texto_boton = ("📲 Enviar código por WhatsApp"
+                               if c["estado"] == "Activo" else
+                               "📲 Contactar por WhatsApp")
                 st.markdown(
-                    f'<a href="{link_whatsapp(c["telefono"], msg_jug)}" '
-                    f'target="_blank" style="display:inline-block;padding:8px 14px;'
-                    f'background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;'
-                    f'font-weight:700;border-radius:10px;text-decoration:none;'
-                    f'margin-bottom:10px">📲 Contactar por WhatsApp</a>',
+                    f'<a href="{link_whatsapp(c["telefono"], msg_ok)}" '
+                    f'target="_blank" style="display:inline-block;'
+                    f'padding:8px 14px;background:linear-gradient(135deg,#25d366,#128c7e);'
+                    f'color:#fff;font-weight:700;border-radius:10px;'
+                    f'text-decoration:none;margin-bottom:10px">'
+                    f'{texto_boton}</a>',
                     unsafe_allow_html=True)
 
-                b1, b2, b3 = st.columns(3)
-                if b1.button("✅ Aprobar", key=f"ok_{c['id']}"):
-                    c["estado"] = "Activo"; guardar_datos(); st.rerun()
-                if b2.button("⛔ Rechazar", key=f"no_{c['id']}"):
-                    c["estado"] = "Rechazado"; guardar_datos(); st.rerun()
-                if b3.button("🗑️ Eliminar", key=f"del_{c['id']}"):
-                    ss.cartones.remove(c); guardar_datos(); st.rerun()
-
-                # --- Detección de premios ---
                 if c["estado"] == "Activo" and p["numeros_cantados"]:
                     figs = contar_figura(c["matriz"], p["numeros_cantados"])
                     logros = [k for k, v in figs.items() if v]
                     if carton_lleno(c["matriz"], p["numeros_cantados"]):
-                        premio = int(calcular_pozo(p["id"]) * 0.80)
                         st.success(f"🏆 ¡CARTÓN LLENO! Ganador: {c['nombre']} "
-                                   f"({c['id']}) — Premio: {premio} Bs")
+                                   f"({c.get('codigo','—')})")
                         if st.button("🏅 Registrar ganador (Lleno)",
                                      key=f"win_lleno_{c['id']}"):
-                            registrar_ganador(p, c, "Cartón Lleno", premio)
+                            registrar_ganador(p, c, "Cartón Lleno")
                             st.success("✅ Ganador registrado.")
                     elif logros:
-                        premio = int(calcular_pozo(p["id"]) * 0.50)
                         st.info(f"🎯 Figura completada: {', '.join(logros)} — "
-                                f"{c['nombre']} — Premio: {premio} Bs")
+                                f"{c['nombre']} ({c.get('codigo','—')})")
                         if st.button("🏅 Registrar ganador (Figura)",
                                      key=f"win_fig_{c['id']}"):
-                            registrar_ganador(p, c, ", ".join(logros), premio)
+                            registrar_ganador(p, c, ", ".join(logros))
                             st.success("✅ Ganador registrado.")
 
-    # -------- GANADORES Y EXPORTAR CSV --------
+    # -------- GANADORES --------
     st.markdown("---")
     st.markdown("### 🏆 Historial de ganadores")
     if not ss.ganadores:
