@@ -1,6 +1,5 @@
 # =========================================================
-#  BINGO VIRTUAL ONLINE — App completa y corregida
-#  Panel de administrador oculto para usuarios
+#  BINGO VIRTUAL ONLINE — Archivo completo y corregido
 # =========================================================
 import csv
 import io
@@ -407,6 +406,7 @@ def crear_partida(nombre, pozo_base=0):
         "estado": "Abierta", "numeros_cantados": [],
         "pozo_base": int(pozo_base), "hora_sorteo": None,
         "pausada": False, "ganador": None,
+        "ultimo_ganador": None,
     }
     if ss.partida_actual is None:
         ss.partida_actual = pid
@@ -510,17 +510,37 @@ def agregar_balota(p):
 
 
 def reanudar_partida(p):
-    p["pausada"] = False; p["ganador"] = None
+    p["pausada"] = False
+    p["ganador"] = None
     guardar_datos()
 
 
 def cerrar_por_ganador(p):
+    """Cierra la partida SIN reiniciar (guarda el estado final)."""
     g = p.get("ganador")
     if g:
         carton = next((c for c in ss.cartones if c["id"] == g["carton_id"]), None)
         if carton:
             registrar_ganador(p, carton, g["premio"])
+        p["ultimo_ganador"] = dict(g)
     p["estado"] = "Cerrada"
+    guardar_datos()
+
+
+def publicar_y_reiniciar(p):
+    """Publica al ganador, lo guarda en historial y REINICIA la ronda."""
+    g = p.get("ganador")
+    if g:
+        carton = next((c for c in ss.cartones if c["id"] == g["carton_id"]), None)
+        if carton:
+            registrar_ganador(p, carton, g["premio"])
+        p["ultimo_ganador"] = dict(g)
+    p["numeros_cantados"] = []
+    p["pausada"] = False
+    p["ganador"] = None
+    if p.get("estado") == "Cerrada":
+        p["estado"] = "Abierta"
+    ss.auto_sorteo = False
     guardar_datos()
 
 
@@ -536,6 +556,7 @@ def crear_mesa_amistosa(nombre):
         "numeros_cantados": [],
         "pausada": False,
         "ganador": None,
+        "ultimo_ganador": None,
         "creada": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
     if ss.mesa_amistosa_actual is None:
@@ -613,11 +634,24 @@ def agregar_balota_amistosa(mesa):
 
 
 def reanudar_mesa(mesa):
-    mesa["pausada"] = False; mesa["ganador"] = None
+    mesa["pausada"] = False
+    mesa["ganador"] = None
     guardar_datos()
 
 
 def nueva_ronda_mesa(mesa):
+    mesa["numeros_cantados"] = []
+    mesa["pausada"] = False
+    mesa["ganador"] = None
+    ss.auto_sorteo_amistoso = False
+    guardar_datos()
+
+
+def nueva_ronda_amistosa_y_publicar(mesa):
+    """Publica al ganador de la mesa amistosa y reinicia la ronda."""
+    g = mesa.get("ganador")
+    if g:
+        mesa["ultimo_ganador"] = dict(g)
     mesa["numeros_cantados"] = []
     mesa["pausada"] = False
     mesa["ganador"] = None
@@ -638,17 +672,53 @@ if not ss.partidas:
 
 
 # =========================================================
+#  🔄 AUTO SORTEO (fragmento moderno)
+# =========================================================
+@st.fragment(run_every=1.0)
+def auto_sorteo_loop():
+    """Canta balotas automáticamente cada segundo mientras esté activo."""
+    p = partida_actual()
+    if not p or not ss.get("auto_sorteo"):
+        return
+    if p.get("pausada"):
+        ss.auto_sorteo = False
+        return
+    ahora = time.time()
+    if ahora - ss.ultimo_canto >= ss.intervalo_auto:
+        agregar_balota(p)
+        ss.ultimo_canto = ahora
+        st.rerun()
+
+
+@st.fragment(run_every=1.0)
+def auto_sorteo_amistoso_loop():
+    """Canta balotas en mesa amistosa automáticamente."""
+    m = mesa_amistosa_actual()
+    if not m or not ss.get("auto_sorteo_amistoso"):
+        return
+    if m.get("pausada"):
+        ss.auto_sorteo_amistoso = False
+        return
+    ahora = time.time()
+    if ahora - ss.ultimo_canto_amistoso >= ss.intervalo_auto:
+        agregar_balota_amistosa(m)
+        ss.ultimo_canto_amistoso = ahora
+        st.rerun()
+
+
+# =========================================================
 #  BANNERS
 # =========================================================
 def mostrar_banner_ganador(p):
-    if p.get("pausada") and p.get("ganador"):
+    if p.get("ganador"):
         g = p["ganador"]
         st.markdown(
             f'<div class="ganador-box">'
             f'<div class="ganador-titulo">🎉 ¡B I N G O! 🎉</div>'
             f'<div class="ganador-codigo">{g["codigo"]}</div>'
             f'<div class="ganador-detalle">'
-            f'Ganador: <b>{g["nombre"]}</b> · Premio: <b>{g["premio"]}</b>'
+            f'🎊 ¡FELICIDADES <b>{g["nombre"]}</b>! 🎊<br>'
+            f'Premio: <b>{g["premio"]}</b>'
             f'</div></div>', unsafe_allow_html=True)
         st.markdown(
             '<div class="pausa-box">🛑 PARTIDA PAUSADA — El administrador confirmará al ganador</div>',
@@ -658,14 +728,15 @@ def mostrar_banner_ganador(p):
 
 
 def mostrar_banner_ganador_mesa(mesa):
-    if mesa.get("pausada") and mesa.get("ganador"):
+    if mesa.get("ganador"):
         g = mesa["ganador"]
         st.markdown(
             f'<div class="ganador-box">'
             f'<div class="ganador-titulo">🎉 ¡B I N G O! 🎉</div>'
             f'<div class="ganador-codigo">{g["codigo"]}</div>'
             f'<div class="ganador-detalle">'
-            f'Ganador: <b>{g["nombre"]}</b> · Premio: <b>{g["premio"]}</b>'
+            f'🎊 ¡FELICIDADES <b>{g["nombre"]}</b>! 🎊<br>'
+            f'Premio: <b>{g["premio"]}</b>'
             f'</div></div>', unsafe_allow_html=True)
         st.markdown(
             '<div class="pausa-box">🛑 MESA PAUSADA — '
@@ -687,23 +758,23 @@ with st.sidebar:
         nombre_mostrar = cartones_j[0]["nombre"] if cartones_j else ss.jugador_ident
         st.markdown(f"### 👤 {nombre_mostrar}")
         st.caption(f"Identificado como: `{ss.jugador_ident}`")
-        if st.button("🚪 Cerrar sesión", use_container_width=True):
+        if st.button("🚪 Cerrar sesión", use_container_width=True,
+                     key="btn_cerrar_sesion_jugador"):
             ss.jugador_ident = None
             st.rerun()
         st.markdown("---")
 
-    # ===== MENÚ DE NAVEGACIÓN (sin mostrar Administrador a usuarios) =====
+    # ===== MENÚ (sin Administrador para usuarios) =====
     opciones_menu = ["👤 Mi Cartón", "🛒 Comprar Cartón",
                      "🎲 Juego Amistoso", "📺 Sorteo en Vivo"]
 
-    # Solo si ya está logueado como admin, agregamos la pestaña
     if ss.admin_ok:
         opciones_menu.append("⚙️ Administrador")
 
     opcion = st.radio("Navegación", opciones_menu)
     st.markdown("---")
 
-    # ===== ACCESO SECRETO AL PANEL DE ADMINISTRADOR =====
+    # ===== ACCESO SECRETO AL ADMIN =====
     if not ss.admin_ok:
         with st.expander("🔒", expanded=False):
             with st.form("form_login_secreto", clear_on_submit=True):
@@ -722,7 +793,8 @@ with st.sidebar:
         st.markdown(
             '<span class="pill pill-ok">🔓 Sesión admin activa</span>',
             unsafe_allow_html=True)
-        if st.button("🚪 Salir del panel admin", use_container_width=True):
+        if st.button("🚪 Salir del panel admin", use_container_width=True,
+                     key="btn_salir_admin_sidebar"):
             ss.admin_ok = False
             ss.auto_sorteo = False
             st.rerun()
@@ -812,6 +884,25 @@ with st.sidebar:
 
 
 # =========================================================
+#  🏆 ANUNCIO GLOBAL DEL GANADOR (visible en todas las páginas)
+# =========================================================
+_p_anuncio = partida_actual()
+if _p_anuncio and _p_anuncio.get("ganador"):
+    g_anuncio = _p_anuncio["ganador"]
+    st.markdown(
+        f'<div class="ganador-box">'
+        f'<div class="ganador-titulo">🎉 ¡B I N G O! 🎉</div>'
+        f'<div class="ganador-codigo">{g_anuncio["codigo"]}</div>'
+        f'<div class="ganador-detalle">'
+        f'🎊 ¡FELICIDADES <b>{g_anuncio["nombre"]}</b>! 🎊<br>'
+        f'Premio: <b>{g_anuncio["premio"]}</b> · '
+        f'Partida: <b>{_p_anuncio["nombre"]}</b>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+# =========================================================
 #  PÁGINA · 🎲 JUEGO AMISTOSO
 # =========================================================
 if opcion == "🎲 Juego Amistoso":
@@ -837,7 +928,7 @@ if opcion == "🎲 Juego Amistoso":
                 placeholder="Ej: Tarde de amigos, Cumpleaños, Reunión familiar…")
         with col_c2:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("➕ Crear mesa"):
+            if st.button("➕ Crear mesa", key="btn_crear_mesa"):
                 if nuevo_nombre_mesa.strip():
                     mid = crear_mesa_amistosa(nuevo_nombre_mesa)
                     ss.mesa_amistosa_actual = mid
@@ -878,12 +969,29 @@ if opcion == "🎲 Juego Amistoso":
                    f"Creada: {mesa.get('creada','—')} · "
                    f"Cartones: **{len(cartones_de_mesa(mesa['id']))}**")
     with col_h2:
-        if st.button("🧹 Nueva ronda (limpiar balotas)", use_container_width=True):
+        if st.button("🧹 Nueva ronda", use_container_width=True,
+                     key="btn_nueva_ronda_mesa"):
             nueva_ronda_mesa(mesa)
-            st.success("🔁 Balotas reiniciadas. ¡Listos para otra ronda!")
+            st.success("🔁 Balotas reiniciadas.")
             st.rerun()
 
     mostrar_banner_ganador_mesa(mesa)
+
+    # 🆕 Botón publicar ganador + reiniciar
+    if mesa.get("ganador"):
+        g_m = mesa["ganador"]
+        if st.button("🏆 Publicar ganador y REINICIAR la mesa",
+                     use_container_width=True, key="btn_reiniciar_mesa"):
+            nueva_ronda_amistosa_y_publicar(mesa)
+            st.success(f"✅ Ganador **{g_m['nombre']}** ({g_m['codigo']}) "
+                       f"registrado. 🎉 La mesa está lista para otra ronda.")
+            st.balloons()
+            st.rerun()
+
+    ult_g = mesa.get("ultimo_ganador")
+    if ult_g and not mesa.get("ganador"):
+        st.info(f"🏆 **Último ganador:** {ult_g['nombre']} "
+                f"({ult_g['codigo']}) · Premio: {ult_g['premio']}")
 
     with st.expander("➕ Agregar cartón para un amigo", expanded=True):
         st.caption("Escribe el nombre de tu amigo y se genera un cartón único.")
@@ -892,8 +1000,8 @@ if opcion == "🎲 Juego Amistoso":
             with col_f1:
                 nombre_amigo = st.text_input("Nombre del amigo:")
             with col_f2:
-                cant_rapida = st.number_input("Cantidad (mismo amigo):",
-                                              min_value=1, max_value=6, value=1)
+                cant_rapida = st.number_input("Cantidad:", min_value=1,
+                                              max_value=6, value=1)
             with col_f3:
                 st.markdown("<br>", unsafe_allow_html=True)
                 crear_c = st.form_submit_button("🎟️ Generar cartón(es)")
@@ -924,13 +1032,12 @@ if opcion == "🎲 Juego Amistoso":
     st.markdown("### 🎰 Cantar balotas (organizador)")
 
     if mesa.get("pausada"):
-        st.error("🛑 **Mesa PAUSADA por Bingo.** Pulsa *Nueva ronda* para volver "
-                 "a jugar.")
+        st.error("🛑 **Mesa PAUSADA por Bingo.**")
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        if st.button("▶️ Cantar balota", disabled=mesa.get("pausada"),
-                     use_container_width=True):
+        if st.button("▶️ Cantar balota", disabled=bool(mesa.get("pausada")),
+                     use_container_width=True, key="btn_cantar_mesa"):
             ok, msg = agregar_balota_amistosa(mesa)
             if ok:
                 st.rerun()
@@ -938,27 +1045,25 @@ if opcion == "🎲 Juego Amistoso":
                 st.warning(msg)
     with c2:
         etiqueta = "⏸️ Detener auto" if ss.auto_sorteo_amistoso else "⚡ Auto sorteo"
-        if st.button(etiqueta, disabled=mesa.get("pausada") and not ss.auto_sorteo_amistoso,
-                     use_container_width=True):
+        if st.button(etiqueta,
+                     disabled=bool(mesa.get("pausada")) and not ss.auto_sorteo_amistoso,
+                     use_container_width=True, key="btn_toggle_auto_mesa"):
             ss.auto_sorteo_amistoso = not ss.auto_sorteo_amistoso
             ss.ultimo_canto_amistoso = time.time()
             st.rerun()
     with c3:
-        if st.button("🔄 Reiniciar balotas", use_container_width=True):
+        if st.button("🔄 Reiniciar balotas", use_container_width=True,
+                     key="btn_reiniciar_mesa_balotas"):
             nueva_ronda_mesa(mesa)
             st.rerun()
 
     with st.expander("⚙️ Sorteo automático amistoso"):
         ss.intervalo_auto = st.slider("Segundos entre balotas:", 1, 30,
-                                      ss.intervalo_auto)
+                                      ss.intervalo_auto,
+                                      key="slider_intervalo_amistoso")
 
-    if ss.auto_sorteo_amistoso and not mesa.get("pausada"):
-        ahora = time.time()
-        if ahora - ss.ultimo_canto_amistoso >= ss.intervalo_auto:
-            agregar_balota_amistosa(mesa)
-            ss.ultimo_canto_amistoso = ahora
-        time.sleep(1.0)
-        st.rerun()
+    # Llamar al fragmento del auto-sorteo amistoso
+    auto_sorteo_amistoso_loop()
 
     if mesa["numeros_cantados"] and \
        ss.ultima_balota_vista_amistosa != mesa["numeros_cantados"][-1]:
@@ -1073,7 +1178,7 @@ elif opcion == "👤 Mi Cartón":
 
     if not mis_cartones:
         st.warning(f"No encontramos cartones asociados a **{ident}**.")
-        if st.button("🔓 Probar con otro dato"):
+        if st.button("🔓 Probar con otro dato", key="btn_otro_dato"):
             ss.jugador_ident = None; st.rerun()
         st.stop()
 
@@ -1083,7 +1188,8 @@ elif opcion == "👤 Mi Cartón":
         st.markdown(f"### 👋 ¡Hola, **{jugador_nombre}**!")
         st.caption(f"📱 {ident} · Tienes **{len(mis_cartones)}** cartón(es)")
     with col_h2:
-        if st.button("🚪 Cerrar sesión", use_container_width=True):
+        if st.button("🚪 Cerrar sesión", use_container_width=True,
+                     key="btn_cerrar_sesion_micarton"):
             ss.jugador_ident = None; st.rerun()
 
     activos   = len([c for c in mis_cartones if c["estado"] == "Activo"])
@@ -1104,7 +1210,10 @@ elif opcion == "👤 Mi Cartón":
         color_m = "pill-cash" if metodo == "Efectivo" else "pill-info"
 
         gan_partida = partida_obj.get("ganador")
+        ultimo_gan = partida_obj.get("ultimo_ganador")
+        fue_ganador = bool(ultimo_gan and ultimo_gan.get("carton_id") == c["id"])
         es_ganador = bool(gan_partida and gan_partida.get("carton_id") == c["id"])
+        es_ganador = es_ganador or fue_ganador
 
         if estado == "Activo":
             if es_ganador:
@@ -1114,7 +1223,7 @@ elif opcion == "👤 Mi Cartón":
                     f'<div class="ganador-titulo">🎉 ¡HAS GANADO! 🎉</div>'
                     f'<div class="ganador-codigo">{c.get("codigo","—")}</div>'
                     f'<div class="ganador-detalle">'
-                    f'Premio: <b>{gan_partida["premio"]}</b> · '
+                    f'Premio: <b>{(gan_partida or ultimo_gan)["premio"]}</b> · '
                     f'Partida: <b>{nombre_partida}</b><br>'
                     f'¡Contáctanos por WhatsApp para reclamar tu premio!'
                     f'</div></div>', unsafe_allow_html=True)
@@ -1188,7 +1297,7 @@ elif opcion == "👤 Mi Cartón":
         st.markdown(
             boton_whatsapp(
                 WHATSAPP_INFO,
-                f"Hola, soy {jugador_nombre}, tengo dudas sobre mis cartones del Bingo.",
+                f"Hola, soy {jugador_nombre}, tengo dudas sobre mis cartones.",
                 "📲 Información general",
             ),
             unsafe_allow_html=True,
@@ -1252,6 +1361,7 @@ elif opcion == "🛒 Comprar Cartón":
                 f"🎯 Figuras (4 Esquinas / Lateral / Diagonal) — {PRECIO_FIGURAS} Bs",
                 f"🏆 Cartón Lleno — {PRECIO_LLENO} Bs",
             ],
+            key="radio_modalidad",
         )
         costo, tipo = (PRECIO_FIGURAS, "Figuras") if "Figuras" in modalidad \
                       else (PRECIO_LLENO, "Lleno")
@@ -1264,7 +1374,8 @@ elif opcion == "🛒 Comprar Cartón":
 
         st.markdown("### 2️⃣ Elige tu método de pago")
         metodo_pago = st.radio("Método de pago:",
-                               ["📱 Pago Móvil", "💵 Efectivo (en persona)"])
+                               ["📱 Pago Móvil", "💵 Efectivo (en persona)"],
+                               key="radio_metodo_pago")
 
         if "Pago Móvil" in metodo_pago:
             st.markdown("#### 📱 Datos para Pago Móvil")
@@ -1395,7 +1506,7 @@ elif opcion == "📺 Sorteo en Vivo":
         else:
             st.info("⏳ El sorteo aún no ha comenzado.")
 
-        if st.button("🔄 Actualizar pantalla"):
+        if st.button("🔄 Actualizar pantalla", key="btn_actualizar_live"):
             st.rerun()
 
     with col_b:
@@ -1421,20 +1532,21 @@ elif opcion == "⚙️ Administrador" and ss.admin_ok:
     st.title("⚙️ Panel de Administrador")
     st.markdown("---")
 
-    # Doble verificación por si alguien intenta forzar la URL
     if not ss.admin_ok:
-        st.error("⛔ Acceso denegado. Debes iniciar sesión como administrador.")
+        st.error("⛔ Acceso denegado.")
         st.stop()
 
     with st.expander("🎮 Gestión de partidas (con apuesta)", expanded=False):
         col_p1, col_p2 = st.columns([2, 1])
         with col_p1:
-            nombre_nueva = st.text_input("Nombre de la nueva partida:")
+            nombre_nueva = st.text_input("Nombre de la nueva partida:",
+                                         key="txt_nombre_partida")
             pozo_inicial = st.number_input("Pozo base inicial (Bs):",
-                                           min_value=0, value=0, step=50)
+                                           min_value=0, value=0, step=50,
+                                           key="num_pozo_inicial")
         with col_p2:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("➕ Crear partida"):
+            if st.button("➕ Crear partida", key="btn_crear_partida"):
                 if nombre_nueva.strip():
                     pid = crear_partida(nombre_nueva, pozo_inicial)
                     st.success(f"✅ Partida **{pid}** creada."); st.rerun()
@@ -1480,23 +1592,39 @@ elif opcion == "⚙️ Administrador" and ss.admin_ok:
                 f'<span class="pill pill-info">{p["estado"]}</span>',
                 unsafe_allow_html=True)
 
-    if p.get("pausada") and p.get("ganador"):
+    # ===== ACCIONES SOBRE EL GANADOR =====
+    if p.get("ganador"):
         g = p["ganador"]
         mostrar_banner_ganador(p)
         st.markdown("### 🎛️ Acciones sobre el ganador")
+
+        if st.button("🏆 Publicar ganador y REINICIAR ronda",
+                     use_container_width=True,
+                     key="btn_publicar_reiniciar_v2"):
+            publicar_y_reiniciar(p)
+            st.success(f"✅ Ganador **{g['nombre']}** ({g['codigo']}) "
+                       f"registrado. 🎉 La partida se reinició.")
+            st.balloons()
+            st.rerun()
+
+        st.markdown("---")
+        st.caption("Otras opciones:")
         acc1, acc2 = st.columns(2)
         with acc1:
-            if st.button("🏆 Confirmar ganador y CERRAR partida",
-                         use_container_width=True):
+            if st.button("🔒 Publicar y CERRAR partida",
+                         use_container_width=True,
+                         key="btn_cerrar_v2"):
                 cerrar_por_ganador(p)
-                st.success("✅ Ganador registrado y partida cerrada.")
+                st.success("✅ Ganador registrado. Partida cerrada.")
                 st.rerun()
         with acc2:
-            if st.button("▶️ Reanudar partida (seguir cantando)",
-                         use_container_width=True):
+            if st.button("▶️ Solo reanudar",
+                         use_container_width=True,
+                         key="btn_reanudar_v2"):
                 reanudar_partida(p)
-                st.info("▶️ Partida reanudada.")
+                st.info("▶️ Partida reanudada sin registrar ganador.")
                 st.rerun()
+
         msg_gan = (f"🎉 ¡FELICIDADES {g['nombre']}! Has ganado el Bingo.\n\n"
                    f"🎟️ Cartón: *{g['codigo']}*\n"
                    f"🏆 Premio: {g['premio']}\n"
@@ -1508,6 +1636,7 @@ elif opcion == "⚙️ Administrador" and ss.admin_ok:
             unsafe_allow_html=True)
         st.markdown("---")
 
+    # ===== CREAR CARTÓN MANUAL =====
     with st.expander("➕ Crear cartón manualmente (para pagos recibidos)",
                      expanded=False):
         with st.form("form_carton_manual", clear_on_submit=True):
@@ -1564,19 +1693,24 @@ elif opcion == "⚙️ Administrador" and ss.admin_ok:
             st.markdown(boton_whatsapp(cm["telefono"], msg_admin,
                                        "📲 Enviar código por WhatsApp"),
                         unsafe_allow_html=True)
-            if st.button("🧹 Ocultar último cartón generado"):
+            if st.button("🧹 Ocultar último cartón generado",
+                         key="btn_ocultar_carton"):
                 ss.ultimo_carton_manual = None; st.rerun()
 
+    # ===== PROGRAMAR HORA =====
     with st.expander("⏰ Programar hora del sorteo", expanded=False):
         col_h1, col_h2, col_h3 = st.columns([1.2, 1, 1])
         with col_h1:
-            fecha_sel = st.date_input("📅 Fecha:", value=datetime.now().date())
+            fecha_sel = st.date_input("📅 Fecha:",
+                                      value=datetime.now().date(),
+                                      key="date_sorteo")
         with col_h2:
             hora_sel = st.time_input("🕐 Hora:",
-                                     value=(datetime.now() + timedelta(hours=1)).time())
+                                     value=(datetime.now() + timedelta(hours=1)).time(),
+                                     key="time_sorteo")
         with col_h3:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("💾 Guardar hora"):
+            if st.button("💾 Guardar hora", key="btn_guardar_hora"):
                 p["hora_sorteo"] = f"{fecha_sel} {hora_sel.strftime('%H:%M')}"
                 guardar_datos()
                 st.success(f"✅ Sorteo programado para **{p['hora_sorteo']}**")
@@ -1585,22 +1719,23 @@ elif opcion == "⚙️ Administrador" and ss.admin_ok:
             delta = tiempo_restante(p["hora_sorteo"])
             st.info(f"⏰ Programada: **{p['hora_sorteo']}** · "
                     f"⏳ Faltan: **{formatear_delta(delta)}**")
-            if st.button("🗑️ Borrar hora programada"):
+            if st.button("🗑️ Borrar hora programada", key="btn_borrar_hora"):
                 p["hora_sorteo"] = None; guardar_datos(); st.rerun()
 
     st.markdown("---")
 
+    # ===== MODO PRUEBA =====
     with st.expander("🧪 Modo Prueba", expanded=ss.modo_prueba):
         col_t1, col_t2, col_t3 = st.columns(3)
         with col_t1:
-            if st.button("🎲 Cantar balota de PRUEBA"):
+            if st.button("🎲 Cantar balota de PRUEBA", key="btn_prueba_balota"):
                 disp = [n for n in range(1, 76) if n not in ss.numeros_prueba]
                 if disp:
                     ss.numeros_prueba.append(random.choice(disp)); st.rerun()
                 else:
                     st.warning("Ya se cantaron las 75 balotas.")
         with col_t2:
-            if st.button("🔄 Reiniciar prueba"):
+            if st.button("🔄 Reiniciar prueba", key="btn_reiniciar_prueba"):
                 ss.numeros_prueba = []; st.rerun()
         with col_t3:
             ss.modo_prueba = st.toggle("🎯 Modo prueba ACTIVO",
@@ -1614,6 +1749,7 @@ elif opcion == "⚙️ Administrador" and ss.admin_ok:
         st.markdown('<div class="prueba-banner">🧪 MODO PRUEBA ACTIVO</div>',
                     unsafe_allow_html=True)
 
+    # ===== CONTROL DEL SORTEO REAL =====
     st.markdown("### 🎰 Control del sorteo real")
     partida_pausada = bool(p.get("pausada"))
     if partida_pausada:
@@ -1621,7 +1757,10 @@ elif opcion == "⚙️ Administrador" and ss.admin_ok:
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        if st.button("▶️ Cantar balota", disabled=partida_pausada):
+        if st.button("▶️ Cantar balota",
+                     disabled=partida_pausada,
+                     use_container_width=True,
+                     key="btn_cantar_manual"):
             ok, msg = agregar_balota(p)
             if ok:
                 st.rerun()
@@ -1629,31 +1768,39 @@ elif opcion == "⚙️ Administrador" and ss.admin_ok:
                 st.warning(msg)
     with c2:
         etiqueta = "⏸️ Detener auto" if ss.auto_sorteo else "⚡ Auto sorteo"
-        if st.button(etiqueta, disabled=partida_pausada and not ss.auto_sorteo):
+        if st.button(etiqueta,
+                     disabled=partida_pausada and not ss.auto_sorteo,
+                     use_container_width=True,
+                     key="btn_toggle_auto"):
             ss.auto_sorteo = not ss.auto_sorteo
-            ss.ultimo_canto = time.time(); st.rerun()
+            ss.ultimo_canto = time.time()
+            st.rerun()
     with c3:
-        if st.button("🔄 Reiniciar balotas"):
+        if st.button("🔄 Reiniciar balotas",
+                     use_container_width=True,
+                     key="btn_reiniciar_balotas"):
             p["numeros_cantados"] = []
-            p["pausada"] = False; p["ganador"] = None
+            p["pausada"] = False
+            p["ganador"] = None
             ss.auto_sorteo = False
-            guardar_datos(); st.rerun()
+            guardar_datos()
+            st.rerun()
     with c4:
-        if st.button("🚪 Salir del admin"):
-            ss.admin_ok = False; ss.auto_sorteo = False; st.rerun()
+        if st.button("🚪 Salir del admin",
+                     use_container_width=True,
+                     key="btn_salir_admin"):
+            ss.admin_ok = False
+            ss.auto_sorteo = False
+            st.rerun()
 
     with st.expander("⚙️ Configuración del sorteo automático",
                      expanded=ss.auto_sorteo):
         ss.intervalo_auto = st.slider("Segundos entre balotas:", 1, 30,
-                                      ss.intervalo_auto)
+                                      ss.intervalo_auto,
+                                      key="slider_intervalo_admin")
 
-    if ss.auto_sorteo and not partida_pausada:
-        ahora = time.time()
-        if ahora - ss.ultimo_canto >= ss.intervalo_auto:
-            agregar_balota(p)
-            ss.ultimo_canto = ahora
-        time.sleep(1.0)
-        st.rerun()
+    # Llamar al fragmento del auto-sorteo (¡nueva forma!)
+    auto_sorteo_loop()
 
     if p["numeros_cantados"] and ss.ultima_balota_vista != p["numeros_cantados"][-1]:
         ss.ultima_balota_vista = p["numeros_cantados"][-1]
