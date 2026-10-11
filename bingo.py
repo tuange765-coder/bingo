@@ -1,5 +1,5 @@
 # =========================================================
-#  ZONA DE JUEGOS VIP — Sin contador de giros visible
+#  ZONA DE JUEGOS VIP — Apuesta fija 200 Bs
 # =========================================================
 import json
 import os
@@ -25,10 +25,12 @@ WHATSAPP_ADMIN = "584120139004"
 WHATSAPP_INFO  = "584242004015"
 CONTACTO_INFO  = "0424-200-4015"
 
-APUESTA_MINIMA_ANIMALITOS = 200
-OPCIONES_APUESTA          = [200, 400, 600, 800, 1000]
-RATE_COMISION             = 0.30
-RATE_POTE                 = 0.70
+# 💰 Apuesta fija
+APUESTA_ANIMALITOS = 200
+RATE_COMISION      = 0.30
+RATE_POTE          = 0.70
+APORTE_POTE_FIJO   = int(APUESTA_ANIMALITOS * RATE_POTE)     # 140
+COMISION_FIJA      = int(APUESTA_ANIMALITOS * RATE_COMISION) # 60
 
 PRECIO_BINGO_FIG     = 200
 COMISION_BINGO_FIG   = 60
@@ -102,7 +104,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
     border-radius: 12px !important; border: 1px solid #243352 !important;
 }
 
-/* ============ TARJETAS ============ */
 .metric-card {
     background: linear-gradient(135deg, rgba(20,27,45,.95), rgba(10,14,23,.95));
     border: 2px solid rgba(255, 0, 127, 0.35);
@@ -113,7 +114,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 .metric-card h3 { color: #00ffcc !important; font-size: 14px; letter-spacing: 2px; margin: 0; }
 .metric-card h1 { color: #ffd700 !important; font-size: 34px; margin: 8px 0 0 0; }
 
-/* ============ POTE GIGANTE ============ */
 .pote-gigante {
     background: linear-gradient(135deg, #facc15, #f59e0b, #dc2626);
     border: 4px solid #fef08a;
@@ -135,7 +135,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
                margin: 8px 0; letter-spacing: 2px; }
 .pote-sub    { color:#1a1205; font-size:14px; font-weight:700; }
 
-/* ============ JACKPOT BANNER ============ */
 .jackpot-banner {
     background: linear-gradient(90deg, #f5af19 0%, #f12711 100%);
     padding: 15px; border-radius: 12px; text-align: center;
@@ -145,7 +144,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 }
 @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.02); } }
 
-/* ============ CARTÓN ============ */
 .carton { display:inline-block; background:#0f172a; padding:12px;
     border-radius:16px; border:2px solid #243352;
     box-shadow: 0 14px 30px rgba(0,0,0,.5); }
@@ -162,7 +160,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
     background: linear-gradient(135deg,#7c3aed,#4c1d95);
     color:#fff; font-weight:800; font-size:18px; }
 
-/* ============ PILLS ============ */
 .pill { display:inline-block; padding:4px 12px; border-radius:999px;
     font-size:12px; font-weight:700; letter-spacing:.5px; }
 .pill-ok   { background:#14532d; color:#86efac; border:1px solid #22c55e; }
@@ -171,7 +168,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 .pill-info { background:#1e3a8a; color:#bfdbfe; border:1px solid #3b82f6; }
 .pill-vip  { background:#4c1d95; color:#ddd6fe; border:1px solid #8b5cf6; }
 
-/* ============ ANUNCIO DE GANADOR PREMIUM ============ */
 .ganador-pantalla {
     background:
         radial-gradient(900px 400px at 50% 0%, #fef08a 0%, transparent 60%),
@@ -240,7 +236,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
     letter-spacing: 3px;
 }
 
-/* ============ INFO BOX ============ */
 .info-box {
     background: linear-gradient(135deg, #065f46, #064e3b);
     border: 2px solid #34d399; border-radius: 16px;
@@ -250,7 +245,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 .info-valor  { color:#fff; font-size:22px; font-weight:800; margin-top:6px; }
 .info-resto  { color:#a7f3d0; font-size:13px; margin-top:6px; }
 
-/* ============ GRID ANIMALITOS ============ */
 .animal-grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; }
 .animal-btn {
     background:#131c31; border:1px solid #26355a; border-radius:12px;
@@ -267,7 +261,6 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
     text-decoration: line-through; opacity: .85;
 }
 
-/* ============ RULETA ============ */
 .ruleta-frame {
     background: radial-gradient(circle at 50% 40%, #1e1b4b, #05060d);
     border: 4px solid #a78bfa; border-radius: 24px;
@@ -673,7 +666,7 @@ if juego == "🔥 Ruleta de Animalitos":
         unsafe_allow_html=True
     )
 
-    # ⏱️ Variable interna (no se muestra)
+    # Variable interna (no se muestra)
     total_esta_ronda = giros_de_esta_ronda()
 
     # ============ COMPRA ============
@@ -697,16 +690,13 @@ if juego == "🔥 Ruleta de Animalitos":
                     disponibles,
                 )
 
-            monto_str = st.selectbox(
-                f"💰 Monto de tu apuesta (mínimo {APUESTA_MINIMA_ANIMALITOS} Bs):",
-                [f"{x} Bs" for x in OPCIONES_APUESTA],
-            )
-            monto_int = int(monto_str.replace(" Bs", ""))
-            aporte_pote = int(monto_int * RATE_POTE)
-            comision_calc = int(monto_int * RATE_COMISION)
-            st.caption(
-                f"💡 **{monto_int} Bs** → **{aporte_pote} Bs** al pote · "
-                f"comisión de {comision_calc} Bs."
+            # 💰 Apuesta fija
+            st.markdown(
+                f'<div class="metric-card" style="padding:12px 16px;border-color:#22c55e">'
+                f'<h3>💰 APUESTA FIJA</h3>'
+                f'<h1 style="font-size:28px">{APUESTA_ANIMALITOS} Bs</h1>'
+                f'</div>',
+                unsafe_allow_html=True
             )
 
             ref_pago = st.text_input("N° de referencia del Pago Móvil:")
@@ -731,24 +721,24 @@ if juego == "🔥 Ruleta de Animalitos":
                         "telefono": telefono.strip(),
                         "animal": animal_elegido,
                         "referencia": ref_pago.strip(),
-                        "monto": monto_int,
-                        "aporte_pote": aporte_pote,
+                        "monto": APUESTA_ANIMALITOS,
+                        "aporte_pote": APORTE_POTE_FIJO,
                         "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
                     }
                     ss.apuestas_animalitos.append(apuesta)
-                    ss.pote_animalitos += aporte_pote
-                    ss.comision_total += comision_calc
+                    ss.pote_animalitos += APORTE_POTE_FIJO
+                    ss.comision_total += COMISION_FIJA
                     registrar_referencia(ref_pago, "Ruleta de Animalitos",
                                          nombre.strip(),
                                          extra=f"Animal: {animal_elegido} · "
-                                               f"Monto: {monto_int} Bs")
+                                               f"Monto: {APUESTA_ANIMALITOS} Bs")
                     st.balloons()
                     st.success(f"🎉 ¡Apuesta registrada, **{nombre}**! "
                                f"Vas con el **{animal_elegido}** por "
-                               f"**{monto_int} Bs**.")
-                    msg = (f"Hola, soy {nombre}. Acabo de apostar {monto_int} Bs "
-                           f"en la Ruleta de Animalitos. Elegí: {animal_elegido}. "
-                           f"Referencia: {ref_pago}.")
+                               f"**{APUESTA_ANIMALITOS} Bs**.")
+                    msg = (f"Hola, soy {nombre}. Acabo de apostar "
+                           f"{APUESTA_ANIMALITOS} Bs en la Ruleta de Animalitos. "
+                           f"Elegí: {animal_elegido}. Referencia: {ref_pago}.")
                     st.markdown(boton_whatsapp(WHATSAPP_ADMIN, msg,
                                                 "📲 Avisar por WhatsApp"),
                                 unsafe_allow_html=True)
@@ -764,8 +754,7 @@ if juego == "🔥 Ruleta de Animalitos":
         st.markdown(
             f'<div class="metric-card"><table style="border-collapse:collapse">{filas}</table>'
             f'<p style="margin-top:10px;color:#ffd700;font-weight:800">'
-            f'Monto mínimo: {APUESTA_MINIMA_ANIMALITOS} Bs</p>'
-            f'<p style="color:#94a3b8;font-size:13px">200, 400, 600, 800 o 1000 Bs</p></div>',
+            f'Monto: {APUESTA_ANIMALITOS} Bs</p></div>',
             unsafe_allow_html=True)
 
     # ============ ANIMALITOS VENDIDOS ============
@@ -777,7 +766,7 @@ if juego == "🔥 Ruleta de Animalitos":
                 f'<div class="metric-card" style="text-align:left;padding:10px 16px">'
                 f'🐾 <b>{a["animal"]}</b> · '
                 f'👤 {a["nombre"]} · '
-                f'💰 {a.get("monto",200)} Bs'
+                f'💰 {APUESTA_ANIMALITOS} Bs'
                 f'</div>', unsafe_allow_html=True)
 
     # ============ RULETA EN VIVO ============
@@ -1065,8 +1054,6 @@ else:
     # ============== TAB 1: RULETA ==============
     with tab1:
         st.markdown("### 🎰 Control de la Ruleta")
-
-        # 🎯 Variable interna para la lógica de entrega
         total_ronda = giros_de_esta_ronda()
 
         c1, c2, c3 = st.columns(3)
@@ -1117,7 +1104,7 @@ else:
                             "jugador":  ganador["nombre"],
                             "telefono": ganador["telefono"],
                             "detalle":  f"Acertó {ganador['animal']} · "
-                                        f"Apostó {ganador.get('monto',200)} Bs",
+                                        f"Apostó {APUESTA_ANIMALITOS} Bs",
                             "premio_bs": premio,
                         })
 
@@ -1136,9 +1123,10 @@ else:
                             f"{ss.pote_animalitos} Bs)."
                         )
 
+                    # 🔄 REINICIAR TODO: balotas + apuestas → todos los animalitos vuelven
                     ss.giros_realizados = 0
                     ss.historial_ruleta = []
-                    ss.apuestas_animalitos = []
+                    ss.apuestas_animalitos = []     # 👈 Animalitos liberados
                     avanzar_indice_giros()
                     ss.hora_ultima_ronda = datetime.now().strftime("%Y-%m-%d %H:%M")
                     guardar()
@@ -1151,7 +1139,7 @@ else:
                 ss.apuestas_animalitos = []
                 avanzar_indice_giros()
                 guardar()
-                st.success("🔄 Ronda reiniciada.")
+                st.success("🔄 Ronda reiniciada. Todos los animalitos disponibles.")
                 st.rerun()
 
         with c3:
@@ -1174,8 +1162,13 @@ else:
                         "premio_bs": premio,
                     })
                     ss.pote_animalitos = 0
+                    # 🔄 Reiniciar apuestas también
+                    ss.apuestas_animalitos = []
+                    ss.historial_ruleta = []
+                    ss.giros_realizados = 0
                     guardar()
-                    st.success(f"Pote entregado a {ganador['nombre']}.")
+                    st.success(f"Pote entregado a {ganador['nombre']}. "
+                               f"Todos los animalitos disponibles.")
                     st.rerun()
                 else:
                     st.warning("No hay apuestas registradas.")
@@ -1183,12 +1176,14 @@ else:
         st.markdown("---")
         st.markdown("### 📝 Apuestas actuales")
         if ss.apuestas_animalitos:
-            total_apostado = sum(a.get("monto", 200) for a in ss.apuestas_animalitos)
-            st.markdown(f"**Total apostado en esta ronda:** {total_apostado} Bs")
+            total_apostado = len(ss.apuestas_animalitos) * APUESTA_ANIMALITOS
+            st.markdown(f"**Total apostado en esta ronda:** {total_apostado} Bs "
+                        f"({len(ss.apuestas_animalitos)} apuestas × "
+                        f"{APUESTA_ANIMALITOS} Bs)")
             for a in ss.apuestas_animalitos:
                 st.markdown(
                     f"- 🐾 **{a['animal']}** · {a['nombre']} · "
-                    f"💰 {a.get('monto',200)} Bs · "
+                    f"💰 {APUESTA_ANIMALITOS} Bs · "
                     f"📞 {a['telefono']} · Ref: {a['referencia']}")
         else:
             st.caption("Sin apuestas en esta ronda.")
