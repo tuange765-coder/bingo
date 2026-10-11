@@ -1,5 +1,6 @@
 # =========================================================
-#  BINGO VIRTUAL ONLINE — Con pausa y anuncio de ganador
+#  BINGO VIRTUAL ONLINE — App completa y corregida
+#  Panel de administrador oculto para usuarios
 # =========================================================
 import csv
 import io
@@ -25,6 +26,8 @@ st.set_page_config(
 
 CLAVE_ADMIN       = "Juan*316*"
 WHATSAPP_ADMIN    = "584120139004"
+CONTACTO_INFO     = "0424-200-4015"
+WHATSAPP_INFO     = "584242004015"
 PRECIO_FIGURAS    = 200
 PRECIO_LLENO      = 500
 INTERVALO_DEFECTO = 5
@@ -115,28 +118,34 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 .pill-cash { background:#4c1d95; color:#ddd6fe; border:1px solid #8b5cf6; }
 .pill-man  { background:#7c2d12; color:#fed7aa; border:1px solid #ea580c; }
 .pill-pause{ background:#7f1d1d; color:#fecaca; border:1px solid #ef4444; }
+.pill-free { background:#065f46; color:#a7f3d0; border:1px solid #10b981; }
 
+.free-banner {
+    background: linear-gradient(135deg, #065f46, #0891b2);
+    border: 2px dashed #67e8f9;
+    border-radius: 16px;
+    padding: 16px 22px;
+    margin: 12px 0;
+    text-align: center;
+    color: #cffafe;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
 .codigo-box {
     background: linear-gradient(135deg, #16a34a, #065f46);
     border: 2px dashed #86efac;
     border-radius: 16px;
-    padding: 18px 22px;
-    text-align: center;
-    margin: 12px 0;
+    padding: 18px 22px; text-align: center; margin: 12px 0;
     box-shadow: 0 0 30px rgba(34,197,94,.35);
 }
 .codigo-titulo { color:#d1fae5; font-size:13px; letter-spacing:2px; font-weight:700; }
 .codigo-valor  { color:#fff; font-size:34px; font-weight:800; letter-spacing:4px;
                  margin-top:6px; font-family: 'Courier New', monospace; }
 
-/* 🎉 BANNER DE GANADOR */
 .ganador-box {
     background: linear-gradient(135deg, #facc15, #f59e0b, #dc2626);
-    border: 3px solid #fef08a;
-    border-radius: 20px;
-    padding: 26px 30px;
-    text-align: center;
-    margin: 16px 0;
+    border: 3px solid #fef08a; border-radius: 20px;
+    padding: 26px 30px; text-align: center; margin: 16px 0;
     box-shadow: 0 0 60px rgba(250,204,21,.6);
     animation: brillar 1.4s ease-in-out infinite alternate;
 }
@@ -153,50 +162,33 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 
 .pausa-box {
     background: linear-gradient(135deg, #7f1d1d, #450a0a);
-    border: 3px dashed #fca5a5;
-    border-radius: 16px;
-    padding: 18px 22px;
-    text-align: center;
-    margin: 12px 0;
-    color: #fecaca;
-    font-weight: 700;
-    letter-spacing: 2px;
+    border: 3px dashed #fca5a5; border-radius: 16px;
+    padding: 18px 22px; text-align: center; margin: 12px 0;
+    color: #fecaca; font-weight: 700; letter-spacing: 2px;
     animation: pulso 1.2s ease-in-out infinite;
 }
-@keyframes pulso {
-    0%,100% { opacity: 1; }
-    50%     { opacity: .55; }
-}
+@keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 
 .pendiente-box {
     background: linear-gradient(135deg, #78350f, #451a03);
-    border: 2px dashed #fcd34d;
-    border-radius: 16px;
-    padding: 18px 22px;
-    text-align: center;
-    margin: 12px 0;
+    border: 2px dashed #fcd34d; border-radius: 16px;
+    padding: 18px 22px; text-align: center; margin: 12px 0;
 }
 .pendiente-titulo { color:#fef3c7; font-size:15px; font-weight:700; }
 .pendiente-texto  { color:#fde68a; font-size:13px; margin-top:6px; }
 
 .efectivo-box {
     background: linear-gradient(135deg, #4c1d95, #2e1065);
-    border: 2px dashed #c4b5fd;
-    border-radius: 16px;
-    padding: 18px 22px;
-    text-align: center;
-    margin: 12px 0;
+    border: 2px dashed #c4b5fd; border-radius: 16px;
+    padding: 18px 22px; text-align: center; margin: 12px 0;
 }
 .efectivo-titulo { color:#ddd6fe; font-size:15px; font-weight:700; }
 .efectivo-texto  { color:#c4b5fd; font-size:13px; margin-top:6px; }
 
 .hora-box {
     background: linear-gradient(135deg, #1e40af, #1e3a8a);
-    border: 2px solid #60a5fa;
-    border-radius: 16px;
-    padding: 16px 22px;
-    text-align: center;
-    margin: 12px 0;
+    border: 2px solid #60a5fa; border-radius: 16px;
+    padding: 16px 22px; text-align: center; margin: 12px 0;
     box-shadow: 0 0 25px rgba(59,130,246,.35);
 }
 .hora-titulo { color:#dbeafe; font-size:13px; letter-spacing:2px; font-weight:700; }
@@ -205,14 +197,10 @@ section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 
 .prueba-banner {
     background: linear-gradient(135deg, #b45309, #78350f);
-    border: 2px dashed #fbbf24;
-    border-radius: 14px;
-    padding: 14px 20px;
-    margin-bottom: 16px;
-    text-align: center;
-    color: #fef3c7;
-    font-weight: 700;
-    letter-spacing: 1px;
+    border: 2px dashed #fbbf24; border-radius: 14px;
+    padding: 14px 20px; margin-bottom: 16px;
+    text-align: center; color: #fef3c7;
+    font-weight: 700; letter-spacing: 1px;
 }
 hr { border-color:#1f2c47; }
 </style>
@@ -226,6 +214,11 @@ def guardar_datos():
         "partidas": ss.partidas, "partida_actual": ss.partida_actual,
         "cartones": ss.cartones, "contador_id": ss.contador_id,
         "contador_partida": ss.contador_partida, "ganadores": ss.ganadores,
+        "mesas_amistosas": ss.mesas_amistosas,
+        "mesa_amistosa_actual": ss.mesa_amistosa_actual,
+        "cartones_amistosos": ss.cartones_amistosos,
+        "contador_mesa": ss.contador_mesa,
+        "contador_carton_libre": ss.contador_carton_libre,
     }
     try:
         with open(ARCHIVO_DATOS, "w", encoding="utf-8") as f:
@@ -250,12 +243,18 @@ def cargar_datos():
 ss = st.session_state
 _datos = cargar_datos()
 
-ss.setdefault("partidas",         _datos["partidas"]         if _datos else {})
-ss.setdefault("partida_actual",   _datos["partida_actual"]   if _datos else None)
-ss.setdefault("cartones",         _datos["cartones"]         if _datos else [])
-ss.setdefault("contador_id",      _datos["contador_id"]      if _datos else 1000)
-ss.setdefault("contador_partida", _datos["contador_partida"] if _datos else 0)
-ss.setdefault("ganadores",        _datos["ganadores"]        if _datos else [])
+ss.setdefault("partidas",         _datos.get("partidas", {})         if _datos else {})
+ss.setdefault("partida_actual",   _datos.get("partida_actual")        if _datos else None)
+ss.setdefault("cartones",         _datos.get("cartones", [])          if _datos else [])
+ss.setdefault("contador_id",      _datos.get("contador_id", 1000)     if _datos else 1000)
+ss.setdefault("contador_partida", _datos.get("contador_partida", 0)   if _datos else 0)
+ss.setdefault("ganadores",        _datos.get("ganadores", [])         if _datos else [])
+ss.setdefault("mesas_amistosas",       _datos.get("mesas_amistosas", {})       if _datos else {})
+ss.setdefault("mesa_amistosa_actual",  _datos.get("mesa_amistosa_actual")       if _datos else None)
+ss.setdefault("cartones_amistosos",    _datos.get("cartones_amistosos", [])    if _datos else [])
+ss.setdefault("contador_mesa",         _datos.get("contador_mesa", 0)          if _datos else 0)
+ss.setdefault("contador_carton_libre", _datos.get("contador_carton_libre", 5000) if _datos else 5000)
+
 ss.setdefault("admin_ok", False)
 ss.setdefault("auto_sorteo", False)
 ss.setdefault("intervalo_auto", INTERVALO_DEFECTO)
@@ -265,36 +264,13 @@ ss.setdefault("modo_prueba", False)
 ss.setdefault("numeros_prueba", [])
 ss.setdefault("ultimo_carton_manual", None)
 ss.setdefault("jugador_ident", None)
+ss.setdefault("auto_sorteo_amistoso", False)
+ss.setdefault("ultimo_canto_amistoso", 0.0)
+ss.setdefault("ultima_balota_vista_amistosa", None)
 
 # =========================================================
-#  FUNCIONES
+#  FUNCIONES GENERALES
 # =========================================================
-def crear_partida(nombre, pozo_base=0):
-    ss.contador_partida += 1
-    pid = f"P-{ss.contador_partida:03d}"
-    ss.partidas[pid] = {
-        "id": pid, "nombre": nombre.strip() or f"Partida {pid}",
-        "estado": "Abierta", "numeros_cantados": [],
-        "pozo_base": int(pozo_base), "hora_sorteo": None,
-        "pausada": False, "ganador": None,     # 👈 NUEVO
-    }
-    if ss.partida_actual is None:
-        ss.partida_actual = pid
-    guardar_datos()
-    return pid
-
-
-def partida_actual():
-    if ss.partida_actual and ss.partida_actual in ss.partidas:
-        return ss.partidas[ss.partida_actual]
-    return None
-
-
-def numeros_cantados():
-    p = partida_actual()
-    return p["numeros_cantados"] if p else []
-
-
 def generar_carton():
     rangos = [(1, 15), (16, 30), (31, 45), (46, 60), (61, 75)]
     columnas = [random.sample(range(a, b + 1), 5) for a, b in rangos]
@@ -303,11 +279,12 @@ def generar_carton():
     return matriz
 
 
-def generar_codigo_unico():
+def generar_codigo_unico(prefijo="BNG-"):
     existentes = {c.get("codigo") for c in ss.cartones if c.get("codigo")}
+    existentes |= {c.get("codigo") for c in ss.cartones_amistosos if c.get("codigo")}
     while True:
         chars = string.ascii_uppercase + string.digits
-        codigo = "BNG-" + "".join(random.choices(chars, k=4))
+        codigo = prefijo + "".join(random.choices(chars, k=4))
         if codigo not in existentes:
             return codigo
 
@@ -339,20 +316,6 @@ def tablero_html(cantados, clase_extra=""):
     return html
 
 
-def calcular_pozo(pid):
-    p = ss.partidas.get(pid)
-    if not p:
-        return 0
-    activos = sum(c["costo"] for c in ss.cartones
-                  if c["estado"] == "Activo" and c["partida_id"] == pid)
-    return p["pozo_base"] + activos
-
-
-def nuevo_id_carton():
-    ss.contador_id += 1
-    return f"C-{ss.contador_id}"
-
-
 def contar_figura(matriz, cantados):
     marcado = lambda v: v == "★" or v in cantados
     esquinas = all(marcado(matriz[r][c]) for r, c in [(0,0),(0,4),(4,0),(4,4)])
@@ -373,24 +336,16 @@ def link_whatsapp(numero, mensaje):
     return f"https://wa.me/{numero}?text={quote(mensaje)}"
 
 
-def registrar_ganador(partida, carton, tipo_premio):
-    ss.ganadores.append({
-        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "partida": partida["nombre"],
-        "carton": carton.get("codigo", carton["id"]),
-        "jugador": carton["nombre"], "telefono": carton["telefono"],
-        "premio": tipo_premio, "metodo": carton.get("metodo_pago", "—"),
-    })
-    guardar_datos()
-
-
-def exportar_csv(ganadores):
-    buf = io.StringIO()
-    campos = ["fecha", "partida", "carton", "jugador", "telefono", "premio", "metodo"]
-    w = csv.DictWriter(buf, fieldnames=campos); w.writeheader()
-    for g in ganadores:
-        w.writerow({k: g.get(k, "") for k in campos})
-    return buf.getvalue().encode("utf-8")
+def boton_whatsapp(numero, mensaje, texto, color="#25d366"):
+    return (
+        f'<a href="{link_whatsapp(numero, mensaje)}" target="_blank" '
+        f'style="display:inline-block;padding:12px 22px;margin:6px 6px 6px 0;'
+        f'background:linear-gradient(135deg,{color},#128c7e);color:#fff;'
+        f'font-weight:700;border-radius:12px;text-decoration:none;'
+        f'box-shadow:0 8px 20px rgba(37,211,102,.35);'
+        f'transition:transform .15s ease">'
+        f'{texto}</a>'
+    )
 
 
 def reproducir_sonido():
@@ -422,6 +377,88 @@ def formatear_delta(delta):
     return f"{s}s"
 
 
+def seccion_info_whatsapp(titulo="📞 INFORMACIÓN",
+                          subtitulo="Para cualquier duda del Bingo",
+                          mensaje="Hola, necesito información sobre el Bingo Virtual.",
+                          texto_boton="📲 Escribir por WhatsApp"):
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(
+            f'<div class="hora-box" style="background:linear-gradient(135deg,#065f46,#064e3b);'
+            f'border-color:#34d399">'
+            f'<div class="hora-titulo" style="color:#d1fae5">{titulo}</div>'
+            f'<div class="hora-valor" style="font-size:22px">{CONTACTO_INFO}</div>'
+            f'<div class="hora-resto" style="color:#a7f3d0">{subtitulo}</div>'
+            f'</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(boton_whatsapp(WHATSAPP_INFO, mensaje, texto_boton),
+                    unsafe_allow_html=True)
+
+
+# =========================================================
+#  FUNCIONES PARTIDAS CON APUESTA
+# =========================================================
+def crear_partida(nombre, pozo_base=0):
+    ss.contador_partida += 1
+    pid = f"P-{ss.contador_partida:03d}"
+    ss.partidas[pid] = {
+        "id": pid, "nombre": nombre.strip() or f"Partida {pid}",
+        "estado": "Abierta", "numeros_cantados": [],
+        "pozo_base": int(pozo_base), "hora_sorteo": None,
+        "pausada": False, "ganador": None,
+    }
+    if ss.partida_actual is None:
+        ss.partida_actual = pid
+    guardar_datos()
+    return pid
+
+
+def partida_actual():
+    if ss.partida_actual and ss.partida_actual in ss.partidas:
+        return ss.partidas[ss.partida_actual]
+    return None
+
+
+def numeros_cantados():
+    p = partida_actual()
+    return p["numeros_cantados"] if p else []
+
+
+def calcular_pozo(pid):
+    p = ss.partidas.get(pid)
+    if not p:
+        return 0
+    activos = sum(c["costo"] for c in ss.cartones
+                  if c["estado"] == "Activo" and c["partida_id"] == pid)
+    return p["pozo_base"] + activos
+
+
+def nuevo_id_carton():
+    ss.contador_id += 1
+    return f"C-{ss.contador_id}"
+
+
+def registrar_ganador(partida, carton, tipo_premio):
+    ss.ganadores.append({
+        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "partida": partida["nombre"],
+        "carton": carton.get("codigo", carton["id"]),
+        "jugador": carton["nombre"], "telefono": carton["telefono"],
+        "premio": tipo_premio, "metodo": carton.get("metodo_pago", "—"),
+    })
+    guardar_datos()
+
+
+def exportar_csv(ganadores):
+    buf = io.StringIO()
+    campos = ["fecha", "partida", "carton", "jugador", "telefono", "premio", "metodo"]
+    w = csv.DictWriter(buf, fieldnames=campos); w.writeheader()
+    for g in ganadores:
+        w.writerow({k: g.get(k, "") for k in campos})
+    return buf.getvalue().encode("utf-8")
+
+
 def buscar_cartones_jugador(ident):
     ident = str(ident).strip()
     return [c for c in ss.cartones
@@ -429,9 +466,7 @@ def buscar_cartones_jugador(ident):
             or ident.upper() == (c.get("codigo") or "").upper()]
 
 
-# ---------- 🆕 BINGO / GANADOR ----------
 def verificar_ganador(p):
-    """Devuelve {'carton':..., 'premio':...} del primer cartón ganador, o None."""
     if p.get("ganador"):
         return None
     for c in ss.cartones:
@@ -449,9 +484,8 @@ def verificar_ganador(p):
 
 
 def agregar_balota(p):
-    """Agrega una balota y verifica ganador. Devuelve (ok, mensaje)."""
     if p.get("pausada"):
-        return False, "La partida está pausada. Primero el administrador debe resolver al ganador."
+        return False, "La partida está pausada."
     disp = [n for n in range(1, 76) if n not in p["numeros_cantados"]]
     if not disp:
         return False, "Ya se cantaron las 75 balotas."
@@ -470,20 +504,17 @@ def agregar_balota(p):
         p["pausada"] = True
         ss.auto_sorteo = False
         guardar_datos()
-        return True, f"🎉 ¡BINGO! Cartón {carton.get('codigo', carton['id'])}"
+        return True, f"🎉 ¡BINGO! {carton.get('codigo', carton['id'])}"
     guardar_datos()
     return True, "Balota cantada."
 
 
 def reanudar_partida(p):
-    """Quita la pausa y limpia el ganador para seguir cantando."""
-    p["pausada"] = False
-    p["ganador"] = None
+    p["pausada"] = False; p["ganador"] = None
     guardar_datos()
 
 
 def cerrar_por_ganador(p):
-    """Cierra la partida y registra al ganador en el historial."""
     g = p.get("ganador")
     if g:
         carton = next((c for c in ss.cartones if c["id"] == g["carton_id"]), None)
@@ -493,8 +524,155 @@ def cerrar_por_ganador(p):
     guardar_datos()
 
 
+# =========================================================
+#  FUNCIONES MESA AMISTOSA
+# =========================================================
+def crear_mesa_amistosa(nombre):
+    ss.contador_mesa += 1
+    mid = f"M-{ss.contador_mesa:03d}"
+    ss.mesas_amistosas[mid] = {
+        "id": mid,
+        "nombre": nombre.strip() or f"Mesa {mid}",
+        "numeros_cantados": [],
+        "pausada": False,
+        "ganador": None,
+        "creada": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+    if ss.mesa_amistosa_actual is None:
+        ss.mesa_amistosa_actual = mid
+    guardar_datos()
+    return mid
+
+
+def mesa_amistosa_actual():
+    if ss.mesa_amistosa_actual and ss.mesa_amistosa_actual in ss.mesas_amistosas:
+        return ss.mesas_amistosas[ss.mesa_amistosa_actual]
+    return None
+
+
+def nuevo_id_carton_libre():
+    ss.contador_carton_libre += 1
+    return f"LIB-{ss.contador_carton_libre}"
+
+
+def agregar_carton_amistoso(mesa_id, nombre_jugador):
+    carton = {
+        "id": nuevo_id_carton_libre(),
+        "codigo": generar_codigo_unico("FUN-"),
+        "mesa_id": mesa_id,
+        "nombre": nombre_jugador.strip(),
+        "matriz": generar_carton(),
+        "creado": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+    ss.cartones_amistosos.append(carton)
+    guardar_datos()
+    return carton
+
+
+def cartones_de_mesa(mesa_id):
+    return [c for c in ss.cartones_amistosos if c["mesa_id"] == mesa_id]
+
+
+def verificar_ganador_amistoso(mesa):
+    if mesa.get("ganador"):
+        return None
+    cantados = mesa["numeros_cantados"]
+    for c in cartones_de_mesa(mesa["id"]):
+        if carton_lleno(c["matriz"], cantados):
+            return {"carton": c, "premio": "Cartón Lleno"}
+        figs = contar_figura(c["matriz"], cantados)
+        logros = [k for k, v in figs.items() if v]
+        if logros:
+            return {"carton": c, "premio": ", ".join(logros)}
+    return None
+
+
+def agregar_balota_amistosa(mesa):
+    if mesa.get("pausada"):
+        return False, "La mesa está pausada."
+    disp = [n for n in range(1, 76) if n not in mesa["numeros_cantados"]]
+    if not disp:
+        return False, "Ya se cantaron las 75 balotas."
+    mesa["numeros_cantados"].append(random.choice(disp))
+    gan = verificar_ganador_amistoso(mesa)
+    if gan:
+        c = gan["carton"]
+        mesa["ganador"] = {
+            "carton_id": c["id"],
+            "codigo":    c.get("codigo", "—"),
+            "nombre":    c["nombre"],
+            "premio":    gan["premio"],
+            "fecha":     datetime.now().strftime("%Y-%m-%d %H:%M"),
+        }
+        mesa["pausada"] = True
+        ss.auto_sorteo_amistoso = False
+        guardar_datos()
+        return True, f"🎉 ¡BINGO! {c['nombre']} ({c['codigo']})"
+    guardar_datos()
+    return True, "Balota cantada."
+
+
+def reanudar_mesa(mesa):
+    mesa["pausada"] = False; mesa["ganador"] = None
+    guardar_datos()
+
+
+def nueva_ronda_mesa(mesa):
+    mesa["numeros_cantados"] = []
+    mesa["pausada"] = False
+    mesa["ganador"] = None
+    ss.auto_sorteo_amistoso = False
+    guardar_datos()
+
+
+def borrar_mesa(mesa_id):
+    ss.cartones_amistosos = [c for c in ss.cartones_amistosos if c["mesa_id"] != mesa_id]
+    ss.mesas_amistosas.pop(mesa_id, None)
+    if ss.mesa_amistosa_actual == mesa_id:
+        ss.mesa_amistosa_actual = next(iter(ss.mesas_amistosas), None)
+    guardar_datos()
+
+
 if not ss.partidas:
     crear_partida("Partida de Bienvenida", pozo_base=0)
+
+
+# =========================================================
+#  BANNERS
+# =========================================================
+def mostrar_banner_ganador(p):
+    if p.get("pausada") and p.get("ganador"):
+        g = p["ganador"]
+        st.markdown(
+            f'<div class="ganador-box">'
+            f'<div class="ganador-titulo">🎉 ¡B I N G O! 🎉</div>'
+            f'<div class="ganador-codigo">{g["codigo"]}</div>'
+            f'<div class="ganador-detalle">'
+            f'Ganador: <b>{g["nombre"]}</b> · Premio: <b>{g["premio"]}</b>'
+            f'</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="pausa-box">🛑 PARTIDA PAUSADA — El administrador confirmará al ganador</div>',
+            unsafe_allow_html=True)
+        return True
+    return False
+
+
+def mostrar_banner_ganador_mesa(mesa):
+    if mesa.get("pausada") and mesa.get("ganador"):
+        g = mesa["ganador"]
+        st.markdown(
+            f'<div class="ganador-box">'
+            f'<div class="ganador-titulo">🎉 ¡B I N G O! 🎉</div>'
+            f'<div class="ganador-codigo">{g["codigo"]}</div>'
+            f'<div class="ganador-detalle">'
+            f'Ganador: <b>{g["nombre"]}</b> · Premio: <b>{g["premio"]}</b>'
+            f'</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="pausa-box">🛑 MESA PAUSADA — '
+            'Pulsa "Nueva ronda" para jugar otra vez</div>',
+            unsafe_allow_html=True)
+        return True
+    return False
 
 
 # =========================================================
@@ -514,75 +692,357 @@ with st.sidebar:
             st.rerun()
         st.markdown("---")
 
-    opcion = st.radio(
-        "Navegación",
-        ["👤 Mi Cartón", "🛒 Comprar Cartón", "📺 Sorteo en Vivo", "⚙️ Administrador"],
-    )
-    st.markdown("---")
-    st.markdown("### 🎮 Partida actual")
-    if ss.partidas:
-        opciones_partidas = {p["id"]: p["nombre"] for p in ss.partidas.values()}
-        indice = list(opciones_partidas.keys()).index(ss.partida_actual) \
-                 if ss.partida_actual in opciones_partidas else 0
-        pid_sel = st.selectbox(
-            "Selecciona la partida:",
-            options=list(opciones_partidas.keys()),
-            format_func=lambda k: f"{k} · {opciones_partidas[k]}",
-            index=indice, key="selector_partida",
-        )
-        ss.partida_actual = pid_sel
-        p = partida_actual()
-        color = {"Abierta": "pill-ok", "En curso": "pill-wait", "Cerrada": "pill-no"}[p["estado"]]
-        st.markdown(f'<span class="pill {color}">{p["estado"]}</span>',
-                    unsafe_allow_html=True)
-        if p.get("pausada"):
-            st.markdown('<span class="pill pill-pause">⏸️ PAUSADA POR BINGO</span>',
-                        unsafe_allow_html=True)
+    # ===== MENÚ DE NAVEGACIÓN (sin mostrar Administrador a usuarios) =====
+    opciones_menu = ["👤 Mi Cartón", "🛒 Comprar Cartón",
+                     "🎲 Juego Amistoso", "📺 Sorteo en Vivo"]
 
-        if p.get("hora_sorteo") and not p.get("pausada"):
-            delta = tiempo_restante(p["hora_sorteo"])
-            st.markdown(
-                f'<div class="hora-box">'
-                f'<div class="hora-titulo">⏰ SORTEO PROGRAMADO</div>'
-                f'<div class="hora-valor">{p["hora_sorteo"]}</div>'
-                f'<div class="hora-resto">⏳ {formatear_delta(delta)}</div>'
-                f'</div>', unsafe_allow_html=True)
+    # Solo si ya está logueado como admin, agregamos la pestaña
+    if ss.admin_ok:
+        opciones_menu.append("⚙️ Administrador")
+
+    opcion = st.radio("Navegación", opciones_menu)
     st.markdown("---")
-    if ss.partida_actual:
-        st.markdown(f"**🎱 Balotas:** `{len(numeros_cantados())}/75`")
-        activos = len([c for c in ss.cartones
-                       if c["estado"] == "Activo" and c["partida_id"] == ss.partida_actual])
-        st.markdown(f"**🎫 Cartones activos:** `{activos}`")
+
+    # ===== ACCESO SECRETO AL PANEL DE ADMINISTRADOR =====
+    if not ss.admin_ok:
+        with st.expander("🔒", expanded=False):
+            with st.form("form_login_secreto", clear_on_submit=True):
+                clave = st.text_input("Contraseña:", type="password",
+                                      label_visibility="collapsed",
+                                      placeholder="Contraseña…")
+                entrar = st.form_submit_button("Entrar", use_container_width=True)
+            if entrar:
+                if clave == CLAVE_ADMIN:
+                    ss.admin_ok = True
+                    st.rerun()
+                else:
+                    st.error("❌ Contraseña incorrecta.")
+        st.markdown("---")
+    else:
+        st.markdown(
+            '<span class="pill pill-ok">🔓 Sesión admin activa</span>',
+            unsafe_allow_html=True)
+        if st.button("🚪 Salir del panel admin", use_container_width=True):
+            ss.admin_ok = False
+            ss.auto_sorteo = False
+            st.rerun()
+        st.markdown("---")
+
+    # ===== Panel de partida / mesa =====
+    if opcion != "🎲 Juego Amistoso":
+        st.markdown("### 🎮 Partida actual")
+        if ss.partidas:
+            opciones_partidas = {p["id"]: p["nombre"] for p in ss.partidas.values()}
+            indice = list(opciones_partidas.keys()).index(ss.partida_actual) \
+                     if ss.partida_actual in opciones_partidas else 0
+            pid_sel = st.selectbox(
+                "Selecciona la partida:",
+                options=list(opciones_partidas.keys()),
+                format_func=lambda k: f"{k} · {opciones_partidas[k]}",
+                index=indice, key="selector_partida",
+            )
+            ss.partida_actual = pid_sel
+            p = partida_actual()
+            color = {"Abierta": "pill-ok", "En curso": "pill-wait",
+                     "Cerrada": "pill-no"}[p["estado"]]
+            st.markdown(f'<span class="pill {color}">{p["estado"]}</span>',
+                        unsafe_allow_html=True)
+            if p.get("pausada"):
+                st.markdown('<span class="pill pill-pause">⏸️ PAUSADA POR BINGO</span>',
+                            unsafe_allow_html=True)
+            if p.get("hora_sorteo") and not p.get("pausada"):
+                delta = tiempo_restante(p["hora_sorteo"])
+                st.markdown(
+                    f'<div class="hora-box">'
+                    f'<div class="hora-titulo">⏰ SORTEO PROGRAMADO</div>'
+                    f'<div class="hora-valor">{p["hora_sorteo"]}</div>'
+                    f'<div class="hora-resto">⏳ {formatear_delta(delta)}</div>'
+                    f'</div>', unsafe_allow_html=True)
+        st.markdown("---")
+        if ss.partida_actual:
+            st.markdown(f"**🎱 Balotas:** `{len(numeros_cantados())}/75`")
+            activos = len([c for c in ss.cartones
+                           if c["estado"] == "Activo"
+                           and c["partida_id"] == ss.partida_actual])
+            st.markdown(f"**🎫 Cartones activos:** `{activos}`")
+    else:
+        st.markdown("### 🎲 Mesa amistosa actual")
+        if ss.mesas_amistosas:
+            opciones_m = {m["id"]: m["nombre"] for m in ss.mesas_amistosas.values()}
+            indice_m = list(opciones_m.keys()).index(ss.mesa_amistosa_actual) \
+                       if ss.mesa_amistosa_actual in opciones_m else 0
+            mid_sel = st.selectbox(
+                "Mesa:",
+                options=list(opciones_m.keys()),
+                format_func=lambda k: f"{k} · {opciones_m[k]}",
+                index=indice_m, key="selector_mesa",
+            )
+            ss.mesa_amistosa_actual = mid_sel
+            m = mesa_amistosa_actual()
+            if m.get("pausada"):
+                st.markdown('<span class="pill pill-pause">⏸️ BINGO</span>',
+                            unsafe_allow_html=True)
+            else:
+                st.markdown('<span class="pill pill-free">🎉 JUGANDO</span>',
+                            unsafe_allow_html=True)
+            st.markdown(f"**🎱 Balotas:** `{len(m['numeros_cantados'])}/75`")
+            st.markdown(f"**🎫 Cartones:** `{len(cartones_de_mesa(m['id']))}`")
+        else:
+            st.caption("Aún no hay mesas creadas.")
+
+    # ===== INFORMACIÓN + WHATSAPP =====
     st.markdown("---")
+    st.markdown(
+        f'<div class="hora-box" style="background:linear-gradient(135deg,#065f46,#064e3b);'
+        f'border-color:#34d399">'
+        f'<div class="hora-titulo" style="color:#d1fae5">📞 INFORMACIÓN</div>'
+        f'<div class="hora-valor" style="font-size:22px">{CONTACTO_INFO}</div>'
+        f'<div class="hora-resto" style="color:#a7f3d0">'
+        f'Para cualquier duda del Bingo</div>'
+        f'</div>', unsafe_allow_html=True)
+    st.markdown(
+        boton_whatsapp(
+            WHATSAPP_INFO,
+            "Hola, necesito información sobre el Bingo Virtual.",
+            "📲 Escribir por WhatsApp",
+        ),
+        unsafe_allow_html=True,
+    )
     st.caption("🔞 Juega responsablemente.")
 
 
 # =========================================================
-#  UTILIDAD: Banner de ganador (se usa en varias páginas)
+#  PÁGINA · 🎲 JUEGO AMISTOSO
 # =========================================================
-def mostrar_banner_ganador(p):
-    """Muestra el banner de ganador + aviso de pausa si corresponde."""
-    if p.get("pausada") and p.get("ganador"):
-        g = p["ganador"]
-        st.markdown(
-            f'<div class="ganador-box">'
-            f'<div class="ganador-titulo">🎉 ¡B I N G O! 🎉</div>'
-            f'<div class="ganador-codigo">{g["codigo"]}</div>'
-            f'<div class="ganador-detalle">'
-            f'Ganador: <b>{g["nombre"]}</b> · Premio: <b>{g["premio"]}</b>'
-            f'</div></div>',
+if opcion == "🎲 Juego Amistoso":
+    st.title("🎲 Sala de Juego Amistoso")
+    st.markdown(
+        '<div class="free-banner">'
+        '🎉 MODO SIN APUESTAS · Juega con tus amigos por diversión · Sin pagos'
+        '</div>', unsafe_allow_html=True)
+
+    seccion_info_whatsapp(
+        titulo="📞 INFORMACIÓN",
+        subtitulo="Escríbenos para cualquier duda",
+        mensaje="Hola, tengo dudas sobre el Juego Amistoso del Bingo.",
+        texto_boton="📲 WhatsApp",
+    )
+    st.markdown("---")
+
+    with st.expander("🛠️ Crear o elegir mesa amistosa", expanded=not ss.mesas_amistosas):
+        col_c1, col_c2 = st.columns([3, 1])
+        with col_c1:
+            nuevo_nombre_mesa = st.text_input(
+                "Nombre de la nueva mesa:",
+                placeholder="Ej: Tarde de amigos, Cumpleaños, Reunión familiar…")
+        with col_c2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("➕ Crear mesa"):
+                if nuevo_nombre_mesa.strip():
+                    mid = crear_mesa_amistosa(nuevo_nombre_mesa)
+                    ss.mesa_amistosa_actual = mid
+                    st.success(f"✅ Mesa **{mid}** creada.")
+                    st.rerun()
+                else:
+                    st.warning("Escribe un nombre.")
+
+        if ss.mesas_amistosas:
+            st.markdown("#### Mesas existentes")
+            for mid, m in list(ss.mesas_amistosas.items()):
+                cc1, cc2, cc3 = st.columns([3, 1.2, 1])
+                icono = "⏸️" if m.get("pausada") else "🎉"
+                cc1.markdown(
+                    f'{icono} **{mid}** · {m["nombre"]} · '
+                    f'`{len(cartones_de_mesa(mid))}` cartones · '
+                    f'`{len(m["numeros_cantados"])}/75` balotas')
+                with cc2:
+                    if st.button("▶️ Entrar", key=f"entrar_{mid}"):
+                        ss.mesa_amistosa_actual = mid
+                        st.rerun()
+                with cc3:
+                    if st.button("🗑️ Eliminar", key=f"delm_{mid}"):
+                        borrar_mesa(mid)
+                        st.rerun()
+
+    mesa = mesa_amistosa_actual()
+    if not mesa:
+        st.info("💡 Crea una mesa amistosa para empezar a jugar.")
+        st.stop()
+
+    st.markdown("---")
+
+    col_h1, col_h2 = st.columns([3, 1])
+    with col_h1:
+        st.markdown(f"### 🎮 Mesa: **{mesa['nombre']}**")
+        st.caption(f"ID: `{mesa['id']}` · "
+                   f"Creada: {mesa.get('creada','—')} · "
+                   f"Cartones: **{len(cartones_de_mesa(mesa['id']))}**")
+    with col_h2:
+        if st.button("🧹 Nueva ronda (limpiar balotas)", use_container_width=True):
+            nueva_ronda_mesa(mesa)
+            st.success("🔁 Balotas reiniciadas. ¡Listos para otra ronda!")
+            st.rerun()
+
+    mostrar_banner_ganador_mesa(mesa)
+
+    with st.expander("➕ Agregar cartón para un amigo", expanded=True):
+        st.caption("Escribe el nombre de tu amigo y se genera un cartón único.")
+        with st.form("form_add_amigo", clear_on_submit=True):
+            col_f1, col_f2, col_f3 = st.columns([2, 1, 1])
+            with col_f1:
+                nombre_amigo = st.text_input("Nombre del amigo:")
+            with col_f2:
+                cant_rapida = st.number_input("Cantidad (mismo amigo):",
+                                              min_value=1, max_value=6, value=1)
+            with col_f3:
+                st.markdown("<br>", unsafe_allow_html=True)
+                crear_c = st.form_submit_button("🎟️ Generar cartón(es)")
+
+        if crear_c:
+            if nombre_amigo.strip():
+                nuevos = []
+                for _ in range(int(cant_rapida)):
+                    nuevos.append(agregar_carton_amistoso(mesa["id"],
+                                                          nombre_amigo))
+                st.success(f"✅ {len(nuevos)} cartón(es) generado(s) para "
+                           f"**{nombre_amigo.strip()}**.")
+                for n in nuevos:
+                    st.markdown(
+                        f'<div class="codigo-box">'
+                        f'<div class="codigo-titulo">🎟️ {n["nombre"]}</div>'
+                        f'<div class="codigo-valor">{n["codigo"]}</div>'
+                        f'</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        f'<div style="text-align:center">'
+                        f'{carton_html(n["matriz"], mesa["numeros_cantados"])}</div>',
+                        unsafe_allow_html=True)
+                    st.markdown("<hr>", unsafe_allow_html=True)
+            else:
+                st.error("⚠️ Escribe el nombre del amigo.")
+
+    st.markdown("---")
+    st.markdown("### 🎰 Cantar balotas (organizador)")
+
+    if mesa.get("pausada"):
+        st.error("🛑 **Mesa PAUSADA por Bingo.** Pulsa *Nueva ronda* para volver "
+                 "a jugar.")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("▶️ Cantar balota", disabled=mesa.get("pausada"),
+                     use_container_width=True):
+            ok, msg = agregar_balota_amistosa(mesa)
+            if ok:
+                st.rerun()
+            else:
+                st.warning(msg)
+    with c2:
+        etiqueta = "⏸️ Detener auto" if ss.auto_sorteo_amistoso else "⚡ Auto sorteo"
+        if st.button(etiqueta, disabled=mesa.get("pausada") and not ss.auto_sorteo_amistoso,
+                     use_container_width=True):
+            ss.auto_sorteo_amistoso = not ss.auto_sorteo_amistoso
+            ss.ultimo_canto_amistoso = time.time()
+            st.rerun()
+    with c3:
+        if st.button("🔄 Reiniciar balotas", use_container_width=True):
+            nueva_ronda_mesa(mesa)
+            st.rerun()
+
+    with st.expander("⚙️ Sorteo automático amistoso"):
+        ss.intervalo_auto = st.slider("Segundos entre balotas:", 1, 30,
+                                      ss.intervalo_auto)
+
+    if ss.auto_sorteo_amistoso and not mesa.get("pausada"):
+        ahora = time.time()
+        if ahora - ss.ultimo_canto_amistoso >= ss.intervalo_auto:
+            agregar_balota_amistosa(mesa)
+            ss.ultimo_canto_amistoso = ahora
+        time.sleep(1.0)
+        st.rerun()
+
+    if mesa["numeros_cantados"] and \
+       ss.ultima_balota_vista_amistosa != mesa["numeros_cantados"][-1]:
+        ss.ultima_balota_vista_amistosa = mesa["numeros_cantados"][-1]
+        reproducir_sonido()
+
+    st.markdown("---")
+    col_a, col_b = st.columns([1, 1.6], gap="large")
+    cantados = mesa["numeros_cantados"]
+    with col_a:
+        if cantados:
+            st.markdown(
+                f'<div class="card"><h4 style="text-align:center">🎱 Última balota</h4>'
+                f'<div class="balota-wrap"><div class="balota">{cantados[-1]}</div></div>'
+                f'<p style="text-align:center;color:#94a3b8">'
+                f'Balota N° {len(cantados)} de 75</p></div>',
+                unsafe_allow_html=True)
+        else:
+            st.info("⏳ Aún no se ha cantado ninguna balota.")
+    with col_b:
+        st.markdown("### 🎯 Tablero de 75 balotas")
+        st.markdown(tablero_html(cantados), unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 🎫 Cartones de esta mesa")
+
+    cartones_m = cartones_de_mesa(mesa["id"])
+    if not cartones_m:
+        st.info("Todavía no hay cartones. Agrega uno arriba.")
+    else:
+        for c in cartones_m:
+            g_mesa = mesa.get("ganador")
+            es_ganador = bool(g_mesa and g_mesa.get("carton_id") == c["id"])
+            etiqueta = " 🏆" if es_ganador else ""
+            with st.expander(f"🎟️ {c['codigo']} · {c['nombre']}{etiqueta}"):
+                st.markdown(
+                    f'<span class="pill pill-free">Código: {c["codigo"]}</span> '
+                    f'<span class="pill pill-info">{c["nombre"]}</span>',
+                    unsafe_allow_html=True)
+                if es_ganador:
+                    st.success(f"🏆 ¡GANADOR! Premio: {g_mesa['premio']}")
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown(carton_html(c["matriz"], cantados),
+                            unsafe_allow_html=True)
+
+                if cantados:
+                    figs = contar_figura(c["matriz"], cantados)
+                    logros = [k for k, v in figs.items() if v]
+                    faltan = sum(1 for fila in c["matriz"] for v in fila
+                                 if v != "★" and v not in cantados)
+                    st.caption(f"🎯 Figuras: "
+                               f"**{', '.join(logros) if logros else 'ninguna'}** · "
+                               f"Casillas faltantes: **{faltan}**")
+
+                colp1, colp2 = st.columns([1, 1])
+                with colp1:
+                    if st.button("🗑️ Eliminar cartón", key=f"delc_{c['id']}"):
+                        ss.cartones_amistosos = [
+                            x for x in ss.cartones_amistosos if x["id"] != c["id"]]
+                        guardar_datos(); st.rerun()
+                with colp2:
+                    if st.button("🔁 Regenerar matriz", key=f"regen_{c['id']}"):
+                        c["matriz"] = generar_carton()
+                        guardar_datos()
+                        st.success("Matriz regenerada.")
+                        st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📜 Historial de balotas")
+    if cantados:
+        st.markdown(" ".join(
+            f'<span style="display:inline-block;margin:4px;padding:8px 14px;'
+            f'border-radius:10px;background:#16213a;color:#ffd166;font-weight:700;'
+            f'border:1px solid #26355a">{n}</span>' for n in cantados),
             unsafe_allow_html=True)
-        st.markdown(
-            '<div class="pausa-box">🛑 PARTIDA PAUSADA — El administrador confirmará al ganador</div>',
-            unsafe_allow_html=True)
-        return True
-    return False
+    else:
+        st.caption("Sin balotas.")
 
 
 # =========================================================
-#  PÁGINA 0 · 👤 MI CARTÓN
+#  PÁGINA · 👤 MI CARTÓN
 # =========================================================
-if opcion == "👤 Mi Cartón":
+elif opcion == "👤 Mi Cartón":
     st.title("👤 Mi Cartón de Bingo")
     st.markdown("---")
 
@@ -599,8 +1059,13 @@ if opcion == "👤 Mi Cartón":
                 ss.jugador_ident = ident.strip(); st.rerun()
             else:
                 st.error("Debes ingresar tu teléfono o código.")
-        st.info("💡 **¿Aún no has comprado?** Ve a la pestaña "
-                "**🛒 Comprar Cartón** y regístrate.")
+        st.info("💡 Si vas a jugar con amigos, ve a **🎲 Juego Amistoso**.")
+        seccion_info_whatsapp(
+            titulo="📞 INFORMACIÓN",
+            subtitulo="Para cualquier duda del Bingo",
+            mensaje="Hola, necesito información sobre el Bingo Virtual.",
+            texto_boton="📲 WhatsApp",
+        )
         st.stop()
 
     ident = ss.jugador_ident
@@ -638,7 +1103,6 @@ if opcion == "👤 Mi Cartón":
         metodo = c.get("metodo_pago", "Pago Móvil")
         color_m = "pill-cash" if metodo == "Efectivo" else "pill-info"
 
-        # ¿Es el cartón ganador de esa partida?
         gan_partida = partida_obj.get("ganador")
         es_ganador = bool(gan_partida and gan_partida.get("carton_id") == c["id"])
 
@@ -653,8 +1117,7 @@ if opcion == "👤 Mi Cartón":
                     f'Premio: <b>{gan_partida["premio"]}</b> · '
                     f'Partida: <b>{nombre_partida}</b><br>'
                     f'¡Contáctanos por WhatsApp para reclamar tu premio!'
-                    f'</div></div>',
-                    unsafe_allow_html=True)
+                    f'</div></div>', unsafe_allow_html=True)
             else:
                 st.markdown(
                     f'<div class="codigo-box">'
@@ -696,7 +1159,7 @@ if opcion == "👤 Mi Cartón":
                     f'<div class="efectivo-box">'
                     f'<div class="efectivo-titulo">💵 Pago en efectivo pendiente · {nombre_partida}</div>'
                     f'<div class="efectivo-texto">'
-                    f'Cuando el organizador reciba el dinero, verás aquí tu código.</div>'
+                    f'Cuando el organizador reciba el dinero, verás tu código.</div>'
                     f'</div>', unsafe_allow_html=True)
             else:
                 st.markdown(
@@ -713,17 +1176,38 @@ if opcion == "👤 Mi Cartón":
         st.markdown("---")
 
     st.markdown("### 💬 ¿Dudas con tu pago o cartón?")
-    msg_ayuda = f"Hola, soy {jugador_nombre}, necesito ayuda con mis cartones del bingo."
     st.markdown(
-        f'<a href="{link_whatsapp(WHATSAPP_ADMIN, msg_ayuda)}" target="_blank" '
-        f'style="display:inline-block;padding:10px 18px;'
-        f'background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;'
-        f'font-weight:700;border-radius:12px;text-decoration:none">'
-        f'📲 Escribir al organizador por WhatsApp</a>', unsafe_allow_html=True)
+        f'<div class="hora-box" style="background:linear-gradient(135deg,#065f46,#064e3b);'
+        f'border-color:#34d399">'
+        f'<div class="hora-titulo" style="color:#d1fae5">📞 INFORMACIÓN Y SOPORTE</div>'
+        f'<div class="hora-valor" style="font-size:24px">{CONTACTO_INFO}</div>'
+        f'</div>', unsafe_allow_html=True)
+
+    col_wa1, col_wa2 = st.columns(2)
+    with col_wa1:
+        st.markdown(
+            boton_whatsapp(
+                WHATSAPP_INFO,
+                f"Hola, soy {jugador_nombre}, tengo dudas sobre mis cartones del Bingo.",
+                "📲 Información general",
+            ),
+            unsafe_allow_html=True,
+        )
+    with col_wa2:
+        msg_ayuda = f"Hola, soy {jugador_nombre}, necesito ayuda con mis cartones."
+        st.markdown(
+            boton_whatsapp(
+                WHATSAPP_ADMIN,
+                msg_ayuda,
+                "📲 Escribir al organizador",
+                color="#0ea5e9",
+            ),
+            unsafe_allow_html=True,
+        )
 
 
 # =========================================================
-#  PÁGINA 1 · COMPRAR CARTÓN
+#  PÁGINA · 🛒 COMPRAR CARTÓN
 # =========================================================
 elif opcion == "🛒 Comprar Cartón":
     st.title("🛒 Compra tu Cartón de Bingo")
@@ -733,10 +1217,9 @@ elif opcion == "🛒 Comprar Cartón":
     if not p:
         st.error("No hay partida activa."); st.stop()
 
-    # 🛑 Aviso si la partida está pausada por Bingo
     if p.get("pausada") and p.get("ganador"):
         mostrar_banner_ganador(p)
-        st.warning("⛔ Mientras la partida esté pausada, no se aceptan nuevas compras.")
+        st.warning("⛔ Mientras la partida esté pausada, no se aceptan compras.")
         st.stop()
 
     if p.get("hora_sorteo"):
@@ -747,6 +1230,14 @@ elif opcion == "🛒 Comprar Cartón":
             f'<div class="hora-valor">{p["hora_sorteo"]}</div>'
             f'<div class="hora-resto">⏳ Faltan: {formatear_delta(delta)}</div>'
             f'</div>', unsafe_allow_html=True)
+
+    seccion_info_whatsapp(
+        titulo="📞 ¿DUDAS CON TU PAGO?",
+        subtitulo="Escríbenos por WhatsApp, te ayudamos al instante",
+        mensaje="Hola, tengo una duda sobre el pago del Bingo.",
+        texto_boton="📲 WhatsApp",
+    )
+    st.markdown("---")
 
     if p["estado"] == "Cerrada":
         st.warning("⛔ Esta partida está cerrada.")
@@ -789,7 +1280,7 @@ elif opcion == "🛒 Comprar Cartón":
                 '<div class="efectivo-box">'
                 '<div class="efectivo-titulo">💵 Pago en Efectivo</div>'
                 '<div class="efectivo-texto">'
-                'Debes entregar el monto en efectivo al organizador. '
+                'Debes entregar el monto al organizador. '
                 'Cuando confirme que lo recibió, tu código será activado.'
                 '</div></div>', unsafe_allow_html=True)
 
@@ -825,13 +1316,10 @@ elif opcion == "🛒 Comprar Cartón":
                                "organizador confirme tu pago, verás tu código "
                                "en **👤 Mi Cartón**.")
                     msg = (f"Hola, soy {carton['nombre']}. Envié mi Pago Móvil "
-                           f"para la partida {p['nombre']}. Ref: {carton['referencia']}.")
+                           f"para {p['nombre']}. Ref: {carton['referencia']}.")
                     st.markdown(
-                        f'<a href="{link_whatsapp(WHATSAPP_ADMIN, msg)}" target="_blank" '
-                        f'style="display:inline-block;padding:10px 18px;margin-top:8px;'
-                        f'background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;'
-                        f'font-weight:700;border-radius:12px;text-decoration:none">'
-                        f'📲 Avisar por WhatsApp</a>', unsafe_allow_html=True)
+                        boton_whatsapp(WHATSAPP_ADMIN, msg, "📲 Avisar por WhatsApp"),
+                        unsafe_allow_html=True)
                 else:
                     st.error("⚠️ Completa todos los campos.")
         else:
@@ -853,23 +1341,16 @@ elif opcion == "🛒 Comprar Cartón":
                     }
                     ss.cartones.append(carton); guardar_datos()
                     st.success(f"💵 Cartón **{carton['id']}** reservado.")
-                    msg = (f"Hola, soy {carton['nombre']}. Registré un pago en "
-                           f"EFECTIVO para la partida {p['nombre']}.")
-                    st.markdown(
-                        f'<a href="{link_whatsapp(WHATSAPP_ADMIN, msg)}" target="_blank" '
-                        f'style="display:inline-block;padding:10px 18px;margin-top:8px;'
-                        f'background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;'
-                        f'font-weight:700;border-radius:12px;text-decoration:none">'
-                        f'📲 Coordinar entrega</a>', unsafe_allow_html=True)
                 else:
                     st.error("⚠️ Completa nombre y teléfono.")
 
         st.markdown("---")
-        st.info("💡 Para ver tus cartones y códigos, ve a **👤 Mi Cartón**.")
+        st.info("💡 Para ver tus cartones, ve a **👤 Mi Cartón**. "
+                "Si vas a jugar con amigos sin apostar, ve a **🎲 Juego Amistoso**.")
 
 
 # =========================================================
-#  PÁGINA 2 · SORTEO EN VIVO
+#  PÁGINA · 📺 SORTEO EN VIVO
 # =========================================================
 elif opcion == "📺 Sorteo en Vivo":
     st.title("📺 Cantadora de Balotas en Vivo")
@@ -881,9 +1362,14 @@ elif opcion == "📺 Sorteo en Vivo":
                 f'<span class="pill pill-info">{p["estado"]}</span>',
                 unsafe_allow_html=True)
 
-    # 🎉 BANNER DE GANADOR (visible para todos)
-    if mostrar_banner_ganador(p):
-        pass  # ya se muestra el banner arriba
+    seccion_info_whatsapp(
+        titulo="📞 INFORMACIÓN",
+        subtitulo="¿Dudas? Escríbenos por WhatsApp",
+        mensaje="Hola, tengo una consulta sobre el sorteo en vivo.",
+        texto_boton="📲 WhatsApp",
+    )
+
+    mostrar_banner_ganador(p)
 
     if not p.get("pausada") and p.get("hora_sorteo"):
         delta = tiempo_restante(p["hora_sorteo"])
@@ -929,25 +1415,18 @@ elif opcion == "📺 Sorteo en Vivo":
 
 
 # =========================================================
-#  PÁGINA 3 · ADMINISTRADOR
+#  PÁGINA · ⚙️ ADMINISTRADOR (solo visible si admin_ok)
 # =========================================================
-else:
+elif opcion == "⚙️ Administrador" and ss.admin_ok:
     st.title("⚙️ Panel de Administrador")
     st.markdown("---")
 
+    # Doble verificación por si alguien intenta forzar la URL
     if not ss.admin_ok:
-        with st.form("login_admin"):
-            clave = st.text_input("Contraseña de administrador:", type="password")
-            entrar = st.form_submit_button("🔐 Ingresar")
-        if entrar:
-            if clave == CLAVE_ADMIN:
-                ss.admin_ok = True; st.rerun()
-            else:
-                st.error("❌ Contraseña incorrecta.")
+        st.error("⛔ Acceso denegado. Debes iniciar sesión como administrador.")
         st.stop()
 
-    # -------- GESTIÓN DE PARTIDAS --------
-    with st.expander("🎮 Gestión de partidas", expanded=False):
+    with st.expander("🎮 Gestión de partidas (con apuesta)", expanded=False):
         col_p1, col_p2 = st.columns([2, 1])
         with col_p1:
             nombre_nueva = st.text_input("Nombre de la nueva partida:")
@@ -967,11 +1446,12 @@ else:
                 color = {"Abierta": "pill-ok", "En curso": "pill-wait",
                          "Cerrada": "pill-no"}[pa["estado"]]
                 cc1, cc2, cc3, cc4 = st.columns([3, 1.2, 1.2, 1])
-                cc1.markdown(f'**{pid}** · {pa["nombre"]} '
-                             f'<span class="pill {color}">{pa["estado"]}</span>'
-                             + (' <span class="pill pill-pause">⏸️</span>'
-                                if pa.get("pausada") else ""),
-                             unsafe_allow_html=True)
+                cc1.markdown(
+                    f'**{pid}** · {pa["nombre"]} '
+                    f'<span class="pill {color}">{pa["estado"]}</span>'
+                    + (' <span class="pill pill-pause">⏸️</span>'
+                       if pa.get("pausada") else ""),
+                    unsafe_allow_html=True)
                 with cc2:
                     nuevo_estado = st.selectbox(
                         "Estado", ["Abierta", "En curso", "Cerrada"],
@@ -1000,9 +1480,6 @@ else:
                 f'<span class="pill pill-info">{p["estado"]}</span>',
                 unsafe_allow_html=True)
 
-    # =========================================================
-    #  🎉 PANEL DE GANADOR (solo si la partida está pausada)
-    # =========================================================
     if p.get("pausada") and p.get("ganador"):
         g = p["ganador"]
         mostrar_banner_ganador(p)
@@ -1018,24 +1495,19 @@ else:
             if st.button("▶️ Reanudar partida (seguir cantando)",
                          use_container_width=True):
                 reanudar_partida(p)
-                st.info("▶️ Partida reanudada. Puedes seguir cantando balotas.")
+                st.info("▶️ Partida reanudada.")
                 st.rerun()
-
-        # WhatsApp al ganador
         msg_gan = (f"🎉 ¡FELICIDADES {g['nombre']}! Has ganado el Bingo.\n\n"
                    f"🎟️ Cartón: *{g['codigo']}*\n"
                    f"🏆 Premio: {g['premio']}\n"
                    f"🎮 Partida: {p['nombre']}\n\n"
                    f"Coordino contigo la entrega del premio.")
         st.markdown(
-            f'<a href="{link_whatsapp(g["telefono"], msg_gan)}" target="_blank" '
-            f'style="display:inline-block;padding:10px 18px;margin-top:8px;'
-            f'background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;'
-            f'font-weight:700;border-radius:12px;text-decoration:none">'
-            f'📲 Felicitar al ganador por WhatsApp</a>', unsafe_allow_html=True)
+            boton_whatsapp(g["telefono"], msg_gan,
+                           "📲 Felicitar al ganador por WhatsApp"),
+            unsafe_allow_html=True)
         st.markdown("---")
 
-    # -------- CREAR CARTÓN MANUALMENTE --------
     with st.expander("➕ Crear cartón manualmente (para pagos recibidos)",
                      expanded=False):
         with st.form("form_carton_manual", clear_on_submit=True):
@@ -1083,22 +1555,18 @@ else:
                         unsafe_allow_html=True)
             msg_admin = (
                 f"✅ ¡Hola {cm['nombre']}! Tu pago fue recibido. "
-                f"Tu cartón para la partida *{p['nombre']}* ya está ACTIVO.\n\n"
+                f"Tu cartón para la partida *{p['nombre']}* está ACTIVO.\n\n"
                 f"🎟️ Código: *{cm['codigo']}*\n"
                 f"🎯 Modalidad: {cm['tipo']}\n"
                 f"💰 Monto: {cm['costo']} Bs\n\n"
-                f"Entra a la app y pulsa *👤 Mi Cartón* para verlo. ¡Mucha suerte! 🍀"
+                f"Entra a la app y pulsa *👤 Mi Cartón*. ¡Mucha suerte! 🍀"
             )
-            st.markdown(
-                f'<a href="{link_whatsapp(cm["telefono"], msg_admin)}" target="_blank" '
-                f'style="display:inline-block;padding:10px 18px;'
-                f'background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;'
-                f'font-weight:700;border-radius:12px;text-decoration:none;margin-top:8px">'
-                f'📲 Enviar código por WhatsApp</a>', unsafe_allow_html=True)
+            st.markdown(boton_whatsapp(cm["telefono"], msg_admin,
+                                       "📲 Enviar código por WhatsApp"),
+                        unsafe_allow_html=True)
             if st.button("🧹 Ocultar último cartón generado"):
                 ss.ultimo_carton_manual = None; st.rerun()
 
-    # -------- PROGRAMAR HORA --------
     with st.expander("⏰ Programar hora del sorteo", expanded=False):
         col_h1, col_h2, col_h3 = st.columns([1.2, 1, 1])
         with col_h1:
@@ -1122,7 +1590,6 @@ else:
 
     st.markdown("---")
 
-    # -------- MODO PRUEBA --------
     with st.expander("🧪 Modo Prueba", expanded=ss.modo_prueba):
         col_t1, col_t2, col_t3 = st.columns(3)
         with col_t1:
@@ -1147,15 +1614,10 @@ else:
         st.markdown('<div class="prueba-banner">🧪 MODO PRUEBA ACTIVO</div>',
                     unsafe_allow_html=True)
 
-    # -------- CONTROL DEL SORTEO REAL --------
     st.markdown("### 🎰 Control del sorteo real")
-
-    # 🛑 Si la partida está pausada, mostramos aviso y no permitimos cantar
     partida_pausada = bool(p.get("pausada"))
-
     if partida_pausada:
-        st.error("🛑 **Partida PAUSADA por Bingo.** "
-                 "Resuelve al ganador en el panel de arriba antes de seguir.")
+        st.error("🛑 **Partida PAUSADA por Bingo.** Resuelve al ganador arriba.")
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
@@ -1177,7 +1639,7 @@ else:
             ss.auto_sorteo = False
             guardar_datos(); st.rerun()
     with c4:
-        if st.button("🚪 Salir"):
+        if st.button("🚪 Salir del admin"):
             ss.admin_ok = False; ss.auto_sorteo = False; st.rerun()
 
     with st.expander("⚙️ Configuración del sorteo automático",
@@ -1282,27 +1744,21 @@ else:
 
                 if c["estado"] == "Activo" and c.get("codigo"):
                     msg_ok = (f"✅ ¡Hola {c['nombre']}! Tu pago fue confirmado. "
-                              f"Tu código es *{c['codigo']}*. Entra a la app en "
-                              f"*👤 Mi Cartón* para ver tu cartón. ¡Suerte! 🍀")
+                              f"Tu código es *{c['codigo']}*. Entra a la app "
+                              f"en *👤 Mi Cartón*. ¡Suerte! 🍀")
                 elif c["estado"] == "Pendiente":
-                    msg_ok = (f"Hola {c['nombre']}, estamos verificando tu pago.")
+                    msg_ok = f"Hola {c['nombre']}, estamos verificando tu pago."
                 else:
                     msg_ok = f"Hola {c['nombre']}, tu pago no pudo ser verificado."
 
                 texto_boton = ("📲 Enviar código por WhatsApp"
                                if c["estado"] == "Activo" else
                                "📲 Contactar por WhatsApp")
-                st.markdown(
-                    f'<a href="{link_whatsapp(c["telefono"], msg_ok)}" '
-                    f'target="_blank" style="display:inline-block;padding:8px 14px;'
-                    f'background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;'
-                    f'font-weight:700;border-radius:10px;text-decoration:none;'
-                    f'margin-bottom:10px">{texto_boton}</a>',
-                    unsafe_allow_html=True)
+                st.markdown(boton_whatsapp(c["telefono"], msg_ok, texto_boton),
+                            unsafe_allow_html=True)
 
-    # -------- GANADORES --------
     st.markdown("---")
-    st.markdown("### 🏆 Historial de ganadores")
+    st.markdown("### 🏆 Historial de ganadores (con apuesta)")
     if not ss.ganadores:
         st.caption("Aún no se han registrado ganadores.")
     else:
@@ -1313,3 +1769,35 @@ else:
             file_name=f"ganadores_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
             mime="text/csv",
         )
+
+    st.markdown("---")
+    st.markdown("### 🎲 Mesas amistosas (sin apuestas)")
+    if not ss.mesas_amistosas:
+        st.caption("No hay mesas amistosas creadas. Ve a **🎲 Juego Amistoso**.")
+    else:
+        for mid, m in ss.mesas_amistosas.items():
+            cartones_m = cartones_de_mesa(mid)
+            g_actual = m.get("ganador")
+            estado_txt = "⏸️ Pausada por Bingo" if m.get("pausada") else "🎉 Jugando"
+            with st.expander(f"{estado_txt} · {mid} · {m['nombre']}"):
+                st.markdown(
+                    f"**Balotas cantadas:** {len(m['numeros_cantados'])}/75  \n"
+                    f"**Cartones:** {len(cartones_m)}  \n"
+                    f"**Creada:** {m.get('creada','—')}")
+                if g_actual:
+                    st.success(f"🏆 Último ganador: **{g_actual['nombre']}** "
+                               f"({g_actual['codigo']}) · Premio: {g_actual['premio']}")
+                st.markdown("**Jugadores:**")
+                for c in cartones_m:
+                    st.markdown(f"- 🎟️ `{c['codigo']}` · **{c['nombre']}**")
+                if st.button("🗑️ Eliminar mesa", key=f"delm_admin_{mid}"):
+                    borrar_mesa(mid)
+                    st.rerun()
+
+    st.markdown("---")
+    seccion_info_whatsapp(
+        titulo="📞 INFORMACIÓN GENERAL",
+        subtitulo="Tu número de contacto para los jugadores",
+        mensaje="Hola, necesito información sobre el Bingo Virtual.",
+        texto_boton="📲 WhatsApp",
+    )
